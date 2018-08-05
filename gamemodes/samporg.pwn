@@ -85,10 +85,6 @@ enum VehicleData {
 }
 new vInfo[MAX_VEHICLES][VehicleData];
 
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/master
 enum GarageData {
 	Float:g_GarageX,
 	Float:g_GarageY,
@@ -148,10 +144,6 @@ new VehNames[][] =
  	"Phoenix", "Glendale", "Sadler", "Luggage", "Luggage", "Stairs", "Boxville",
  	"Tiller", "Utility Trailer"
 };
-<<<<<<< HEAD
-	
-=======
->>>>>>> origin/master
 
 forward CheckAccount(playerid);
 forward AccountLogin(playerid);
@@ -317,24 +309,9 @@ public OnGameModeInit()
 	if(mysql_errno() != 0) printf("Database connection could not be established! (%d)", mysql_errno());
 	else print("Database connection successfully established!");
 	
-<<<<<<< HEAD
-	CreateVehicle(560, 2406.4075, -1391.0314, 23.8891, 359.8459, 1, 1, 0, 0);
-	
-	
-	LoadGarages();
-	
-	
-	
-	// ----- Pickups / 3D Labels -----
-	
-	
-	// --------------------
-	
-=======
 	CreateVehicle(560, 2406.4075, -1391.0314, 23.8891, 359.8459, -1, -1, 0, 0);
 	
 	LoadGarages();
->>>>>>> origin/master
 
 	// ----- Disables/Settings -----
 	DisableInteriorEnterExits();
@@ -593,13 +570,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			printf("dbid: %d, owner: %d", dbid, pInfo[playerid][id]);
 			new Cache:result = mysql_query(handler, string);
 			new i;
-
-<<<<<<< HEAD
-			for(; i < MAX_VEHICLES; i++)
-			{
-=======
 			for(; i < MAX_VEHICLES; i++) {
->>>>>>> origin/master
 			    if(GetVehicleModel(i) >= 400) continue;
 			    cache_get_value_name_int(0, "model", vInfo[i][v_model]);
 			    cache_get_value_name(0, "licenseplate", plate, sizeof(plate));
@@ -632,23 +603,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			    vInfo[i][v_vehicleid] = i;
 			    break;
 			}
-<<<<<<< HEAD
-			
-			new gID = GetNearestGarage(playerid);
-			printf("gID: %0.2f | gID: %d", gInfo[gID][g_SpawnX1], gID);
-			
-			vInfo[i][v_vehicleid] = CreateVehicle(vInfo[i][v_model], gInfo[gID][g_SpawnX1], gInfo[gID][g_SpawnY1], gInfo[gID][g_SpawnZ1], gInfo[gID][g_SpawnR1], vInfo[i][v_color1], vInfo[i][v_color2], -1, 0);
-			SetVehicleNumberPlate(vInfo[i][v_vehicleid], vInfo[i][v_licenseplate]);
-			
-			
-=======
 
 			new gID = GetNearestGarage(playerid);
 
 			vInfo[i][v_vehicleid] = CreateVehicle(vInfo[i][v_model], gInfo[gID][g_SpawnX1], gInfo[gID][g_SpawnY1], gInfo[gID][g_SpawnZ1], gInfo[gID][g_SpawnR1], vInfo[i][v_color1], vInfo[i][v_color2], -1, 0);
 			SetVehicleNumberPlate(vInfo[i][v_vehicleid], vInfo[i][v_licenseplate]);
-
->>>>>>> origin/master
+			
 			if(vInfo[i][v_spoiler] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_spoiler]);
 			if(vInfo[i][v_hood] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_hood]);
 			if(vInfo[i][v_roof] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_roof]);
@@ -670,16 +630,14 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(vInfo[i][v_vents] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_vents]);
 			ChangeVehicleColor(vInfo[i][v_vehicleid], vInfo[i][v_color1], vInfo[i][v_color2]);
 			if(vInfo[i][v_paintjob] < 1337) ChangeVehiclePaintjob(vInfo[i][v_vehicleid], vInfo[i][v_paintjob]);
-<<<<<<< HEAD
+
 			
 			//PutPlayerInVehicle(playerid, vInfo[i][v_vehicleid], 0);
 			
 			cache_delete(result);
 			print("Fertig");
-=======
 
 			cache_delete(result);
->>>>>>> origin/master
 		}
 	}
 	return 1;
@@ -760,43 +718,19 @@ public AccountRegister(playerid) {
 public SaveAccount(playerid) {
 	new Query[1024], string[256];
 	if(pInfo[playerid][LoggedIn] == 1) {
-<<<<<<< HEAD
 		mysql_format(handler, Query, sizeof(Query), "UPDATE `Player` SET `Adminlevel` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e' WHERE `id` = '%d'", pInfo[playerid][Adminlevel], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy], pInfo[playerid][id]);
-=======
 		GetPlayerPos(playerid, pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
 		GetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
 		mysql_format(handler, string, sizeof(string), "UPDATE `Player` SET `Adminlevel` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e', \n", pInfo[playerid][Adminlevel], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
 		strcat(Query, string);
 		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `FightStyle` = '%d' WHERE `id` = '%d'", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ], pInfo[playerid][posA], pInfo[playerid][FightStyle], pInfo[playerid][id]);
 		strcat(Query, string);
->>>>>>> origin/master
 		mysql_query(handler, Query);
 	} return 1;
 }
 
 public KickPlayer(playerid) {
 	return Kick(playerid);
-}
-
-public ShowPlayerVehicles(playerid)
-{
-	new rows;
-	cache_get_row_count(rows);
-	if(!rows) return SendClientMessage(playerid, COLOR_RED, "You did not have any vehicles.");
-	new plate[12], vid, model, string[2048], type;
-	if(IsPlayerInRangeOfPoint(playerid, 5, 2380.5435, -1376.7015, 24.0000)) type = 1;
-	else type = 0;
-	format(string, sizeof(string), "{FFFFFF}");
-	for(new i; i < rows; i++)
-	{
-		cache_get_value_name_int(i, "id", vid);
-		cache_get_value_name_int(i, "model", model);
-		cache_get_value_name(i, "licenseplate", plate, sizeof(plate));
-		if(GetVehicleType(model) != type) continue;
-		format(string, sizeof(string), "%sID: %d | Name: %s | Plate: %s\n", string, vid, GetVehicleName(model), plate);
-	}
-	ShowPlayerDialog(playerid, D_SHOWPLAYERVEHS, DIALOG_STYLE_LIST, "{FFFFFF}Garage", string, "{FFFFFF}Choose", "{FFFFFF}Back");
-	return 1;
 }
 
 stock NoPermission(playerid) {
@@ -820,8 +754,6 @@ stock currentTime(type = 1) {
 	} return cTime;
 }
 
-<<<<<<< HEAD
-=======
 public ShowPlayerVehicles(playerid)
 {
 	new rows;
@@ -843,7 +775,6 @@ public ShowPlayerVehicles(playerid)
 	return 1;
 }
 
->>>>>>> origin/master
 stock GetVehicleType(modelid)
 {
 	switch(modelid)
