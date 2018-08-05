@@ -28,9 +28,9 @@ new txtstr[145];
 enum PlayerData {
 	Adminlevel,
 	Banned,
-	BanReason[50],
-	BanDate[50],
-	BannedBy[50],
+	BanReason[45],
+	BanDate[20],
+	BannedBy[MAX_PLAYER_NAME+1],
 	LoggedIn
 }
 new pInfo[MAX_PLAYERS][PlayerData];
@@ -45,13 +45,10 @@ new MySQL:handler;
 new Name[MAX_PLAYER_NAME][MAX_PLAYERS];
 new SaveTimer[MAX_PLAYERS];
 
-
-
-
 main() {
 	print("\n");
 	print("============================================================");
-	print("SA-MP.org Selfmade created by Shirobaka");
+	print("Gamemode created for SA-MP.org");
 	print("This gamemode is licensed under the GNU Affero General Public License v3.0");
 	print("============================================================\n");
 }
@@ -93,12 +90,32 @@ ocmd:kick(playerid, params[]) {
 	new target, reason[45], Query[256];
 	if(pInfo[playerid][Adminlevel] >= 1) {
 		if(sscanf(params, "us[45]", target, reason)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /kick <PlayerName/PlayerID> <Reason>");
-		if(!IsPlayerConnected(target) || pInfo[playerid][LoggedIn] == 0) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
+		if(!IsPlayerConnected(target)) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
 		if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 5) return SendClientMessage(playerid, COLOR_GREY, "You are not allowed to use this command on this player!");
 		SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got kicked by %s for %s", Name[target], Name[playerid], reason);
 		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`) VALUES ('Kick', '%e', '%e', '%e', '%e')", Name[target], Name[playerid], reason, currentTime(1));
 		mysql_query(handler, Query);
 		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('/kick', '%e', '%e', '%e')", Name[playerid], Name[target], currentTime(1));
+		mysql_query(handler, Query);
+		SetTimerEx("KickPlayer", 50, 0, "i", playerid);
+		return 1;
+	} return NoPermission(playerid);
+}
+
+ocmd:ban(playerid, params[]) {
+	new target, reason[45], Query[256];
+	if(pInfo[playerid][Adminlevel] >= 2) {
+	    if(sscanf(params, "us[45]", target, reason)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /ban <PlayerName/PlayerID> <Reason>");
+	    if(!IsPlayerConnected(playerid)) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
+	    if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 5) return SendClientMessage(playerid, COLOR_GREY, "You are not allowed to use this command on this player!");
+	    SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got banned by %s for %s", Name[target], Name[playerid], reason);
+	    pInfo[target][Banned] = 1;
+	    format(pInfo[target][BanReason], 45, "%s", reason);
+	    format(pInfo[target][BanDate], 20, "%s", currentTime(1));
+	    format(pInfo[target][BannedBy], MAX_PLAYER_NAME+1, "%s", Name[playerid]);
+		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`) VALUES ('Ban', '%e', '%e', '%e', '%e')", Name[target], Name[playerid], reason, currentTime(1));
+		mysql_query(handler, Query);
+		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('/ban', '%e', '%e', '%e')", Name[playerid], Name[target], currentTime(1));
 		mysql_query(handler, Query);
 		SetTimerEx("KickPlayer", 50, 0, "i", playerid);
 		return 1;
@@ -114,15 +131,18 @@ ocmd:gmx(playerid, params[]) {
 
 public OnGameModeInit()
 {
+	mysql_log(ALL);
 	handler = mysql_connect(M_HOST, M_USER, M_PASS, M_DATA);
 	if(mysql_errno() != 0) printf("Database connection could not be established! (%d)", mysql_errno());
 	else print("Database connection successfully established!");
 	
 	CreateVehicle(560, 2406.4075, -1391.0314, 23.8891, 359.8459, -1, -1, 0, 0);
 
-	// ----- Disables -----
+	// ----- Disables/Settings -----
 	DisableInteriorEnterExits();
 	EnableStuntBonusForAll(0);
+	
+	SetGameModeText("SA-MP.org v0.1");
 	// --------------------
 	
 	return 1;
@@ -130,6 +150,7 @@ public OnGameModeInit()
 
 public OnGameModeExit()
 {
+	mysql_close(handler);
 	return 1;
 }
 
@@ -339,7 +360,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			new Query[256], H_Pass[64], Salt[26];
 			for(new i; i < 25; i++) {
-				Salt[i] = random(79)+47;
+				//Salt[i] = random(79)+47;
+				Salt[i] = random(2) ? (random(26) + (random(2) ? 'a' : 'A')) : (random(10) + '0');
 			}
 			Salt[25] = 0;
 			SHA256_PassHash(inputtext, Salt, H_Pass, 64);
@@ -350,16 +372,23 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	return 1;
 }
 
-public OnPlayerClickPlayer(playerid, clickedplayerid, source)
-{
+public OnPlayerClickPlayer(playerid, clickedplayerid, source) {
 	return 1;
 }
 
-public CheckAccount(playerid)
-{
-	new Rows, string[156];
+public CheckAccount(playerid) {
+	new Rows, string[512];
 	cache_get_row_count(Rows);
 	if(Rows >= 1) {
+		cache_get_value_name_int(0, "Banned", pInfo[playerid][Banned]);
+		cache_get_value_name(0, "BanReason", pInfo[playerid][BanReason], 45);
+		cache_get_value_name(0, "BanDate", pInfo[playerid][BanDate], 20);
+		cache_get_value_name(0, "BannedBy", pInfo[playerid][BannedBy], MAX_PLAYER_NAME+1);
+		if(pInfo[playerid][Banned] == 1) {
+			format(string, sizeof(string), "{FFFFFF}Welcome %s,\nunfortunately you got {FF0000}banned{FFFFFF} from our server, that means that you can't play anymore with this account.\n\nBan reason: %s\nBan date: %s\nBanned by: %s\nIf you have any questions about your ban, contact us on our teamspeak.", Name[playerid], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
+			ShowPlayerDialog(playerid, 32767, DIALOG_STYLE_MSGBOX, "SA-MP.org | Baninfo", string, "Close", "");
+			return SetTimerEx("KickPlayer", 50, 0, "i", playerid);
+		}
 		format(string, sizeof(string), "{FFFFFF}Welcome back %s,\nplease enter your account password.", Name[playerid]);
 		ShowPlayerDialog(playerid, D_LOGIN, DIALOG_STYLE_PASSWORD, "SA-MP.org | Login", string, "Login", "Cancel");
 	} else {
@@ -369,23 +398,17 @@ public CheckAccount(playerid)
 	return 1;
 }
 
-public AccountLogin(playerid)
-{
-	new Rows, string[512];
+public AccountLogin(playerid) {
+	new Rows, string[128];
 	cache_get_row_count(Rows);
 	if(Rows >= 1) {
 		SendClientMessage(playerid, COLOR_DARKGREEN, "Login Successful");
 		cache_get_value_name_int(0, "Adminlevel", pInfo[playerid][Adminlevel]);
 		cache_get_value_name_int(0, "Banned", pInfo[playerid][Banned]);
-		cache_get_value_name(0, "BanReason", pInfo[playerid][BanReason], 50);
-		cache_get_value_name(0, "BanDate", pInfo[playerid][BanDate], 50);
-		cache_get_value_name(0, "BannedBy", pInfo[playerid][BannedBy], 50);
+		cache_get_value_name(0, "BanReason", pInfo[playerid][BanReason], 45);
+		cache_get_value_name(0, "BanDate", pInfo[playerid][BanDate], 20);
+		cache_get_value_name(0, "BannedBy", pInfo[playerid][BannedBy], MAX_PLAYER_NAME+1);
 		pInfo[playerid][LoggedIn] = 1;
-		if(pInfo[playerid][Banned] == 1) {
-			format(string, sizeof(string), "{FFFFFF}Welcome %s,\nunfortunately you got {FF0000}banned{FFFFFF} from our server, that means that you can't play anymore with this account.\n\nBan reason: %s\nBan date: %s\nBanned by: %s\nIf you have any questions about your ban, contact us on our teamspeak.", Name[playerid], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
-			ShowPlayerDialog(playerid, 32767, DIALOG_STYLE_MSGBOX, "SA-MP.org | Baninfo", string, "Close", "");
-			return SetTimerEx("KickPlayer", 50, 0, "i", playerid);
-		}
 		SaveTimer[playerid] = SetTimerEx("SaveAccount", 300000, 1, "i", playerid);
 		SpawnPlayer(playerid);
 	} else {
@@ -396,8 +419,7 @@ public AccountLogin(playerid)
 	return 1;
 }
 
-public AccountRegister(playerid)
-{
+public AccountRegister(playerid) {
 	new string[128];
 	format(string, sizeof(string), "Welcome %s, your registration was successful!", Name[playerid]);
 	SendClientMessage(playerid, COLOR_DARKGREEN, string);
@@ -412,31 +434,24 @@ public AccountRegister(playerid)
 	return 1;
 }
 
-public SaveAccount(playerid)
-{
-	new Query[1024], string[256];
+public SaveAccount(playerid) {
+	new Query[1024];
 	if(pInfo[playerid][LoggedIn] == 1) {
-	format(string, sizeof(string), "UPDATE `Player` SET `Adminlevel` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e' \n", pInfo[playerid][Adminlevel], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
-	strcat(Query, string);
-	format(string, sizeof(string), "WHERE `Name` = '%e'", Name[playerid]);
-	strcat(Query, string);
-	mysql_query(handler, Query);
+		mysql_format(handler, Query, sizeof(Query), "UPDATE `Player` SET `Adminlevel` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e' WHERE `Name` = '%e'", pInfo[playerid][Adminlevel], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy], Name[playerid]);
+		mysql_query(handler, Query);
 	} return 1;
 }
 
-public KickPlayer(playerid)
-{
-	Kick(playerid);
-	return 1;
+public KickPlayer(playerid) {
+	return Kick(playerid);
 }
 
-stock NoPermission(playerid)
-{
+stock NoPermission(playerid) {
 	return SendClientMessage(playerid, COLOR_GREY, "You have no permission to use this command!");
 }
 
 stock currentTime(type = 1) {
-	new cTime[32], Hour, Minute, Second, Year, Month, Day, date[30], hour[30];
+	new cTime[20], Hour, Minute, Second, Year, Month, Day, date[20], hour[10];
 	gettime(Hour, Minute, Second);
 	getdate(Year, Month, Day);
 	if(type == 1) {
