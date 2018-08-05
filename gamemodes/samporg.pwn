@@ -26,11 +26,18 @@ new txtstr[145];
 #define D_REGISTER 2
 // -------------------
 enum PlayerData {
+	id,
 	Adminlevel,
 	Banned,
 	BanReason[45],
 	BanDate[20],
 	BannedBy[MAX_PLAYER_NAME+1],
+	Float:posX,
+	Float:posY,
+	Float:posZ,
+	Float:posA,
+	FightStyle,
+	Skin,
 	LoggedIn
 }
 new pInfo[MAX_PLAYERS][PlayerData];
@@ -44,6 +51,30 @@ forward KickPlayer(playerid);
 new MySQL:handler;
 new Name[MAX_PLAYER_NAME][MAX_PLAYERS];
 new SaveTimer[MAX_PLAYERS];
+new FirstLogin[MAX_PLAYERS];
+enum rSp {
+	Float:spawnX,
+	Float:spawnY,
+	Float:spawnZ,
+	Float:spawnA,
+	FightStyle
+};
+new randomSpawn[][rSp] = {
+	{2621.1633, 212.5138, 59.0695, 319.4377, FIGHT_STYLE_GRABKICK}, // HankyPanky
+	{2478.5625, -1245.8259, 28.7706, 183.5509, FIGHT_STYLE_BOXING}, // EastLS
+	{1955.5347, 691.5303, 10.8203, 89.1271, FIGHT_STYLE_NORMAL}, // RockShore West
+	{-761.4552, 1615.0485, 27.1172, 356.1084, FIGHT_STYLE_ELBOW}, // Las Barrancas
+	{-2080.5703, -2546.9583, 30.6250, 298.0318, FIGHT_STYLE_KNEEHEAD}, // AngelPine
+	{-2240.5330, 577.3491, 35.1719, 182.1359, FIGHT_STYLE_KUNGFU} // Chinatown
+};
+new randomSkins[][6] = {
+	{73, 78, 134, 135, 77, 197}, // HankyPanky
+	{5, 6, 28, 30, 13, 190}, // EastLS
+	{2, 3, 23, 29, 56, 53}, // RockShore West
+	{179, 182, 183, 222, 207, 218}, // Last Barrancas
+	{161, 128, 160, 168, 151, 129}, // AngelPine
+	{123, 121, 229, 117, 141, 169} // Chinatown
+};
 
 main() {
 	print("\n");
@@ -54,6 +85,22 @@ main() {
 }
 
 // ----- Commands -----
+ocmd:spawn(playerid, params[]) {
+	new Pos = random(sizeof(randomSpawn));
+	SetPlayerPos(playerid, randomSpawn[Pos][spawnX], randomSpawn[Pos][spawnY], randomSpawn[Pos][spawnZ]);
+	SetPlayerFacingAngle(playerid, randomSpawn[Pos][spawnA]);
+	pInfo[playerid][posX] = randomSpawn[Pos][spawnX];
+	pInfo[playerid][posY] = randomSpawn[Pos][spawnY];
+	pInfo[playerid][posZ] = randomSpawn[Pos][spawnZ];
+	pInfo[playerid][posA] = randomSpawn[Pos][spawnA];
+	SetPlayerFightingStyle(playerid, randomSpawn[Pos][FightStyle]);
+	pInfo[playerid][FightStyle] = randomSpawn[Pos][FightStyle];
+	new pSkin = random(6);
+	SetPlayerSkin(playerid, randomSkins[Pos][pSkin]);
+	pInfo[playerid][Skin] = randomSkins[Pos][pSkin];
+	return 1;
+}
+
 ocmd:goto(playerid, params[]) {
 	new target, Float:X, Float:Y, Float:Z, Query[256];
 	if(pInfo[playerid][Adminlevel] >= 1) {
@@ -141,6 +188,7 @@ public OnGameModeInit()
 	// ----- Disables/Settings -----
 	DisableInteriorEnterExits();
 	EnableStuntBonusForAll(0);
+	UsePlayerPedAnims();
 	
 	SetGameModeText("SA-MP.org v0.1");
 	// --------------------
@@ -165,7 +213,9 @@ public OnPlayerConnect(playerid)
 	if(!IsPlayerNPC(playerid)) {
 		for(new i; PlayerData:i < PlayerData; i++) pInfo[playerid][PlayerData:i] = 0;
 	}
+	FirstLogin[playerid] = 0;
 	GetPlayerName(playerid, Name[playerid], MAX_PLAYER_NAME);
+	SetSpawnInfo(playerid, 0, 0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0);
 	mysql_format(handler, Query, sizeof(Query), "SELECT * FROM `Player` WHERE `Name` = '%e'", Name[playerid]);
 	mysql_tquery(handler, Query, "CheckAccount", "i", playerid);
 	return 1;
@@ -181,8 +231,26 @@ public OnPlayerDisconnect(playerid, reason)
 
 public OnPlayerSpawn(playerid)
 {
-	SetPlayerPos(playerid, 2416.1909, -1374.5367, 24.5734);
-	SetPlayerFacingAngle(playerid, 125.9723);
+	if(FirstLogin[playerid] == 1) {
+		new Pos = random(sizeof(randomSpawn));
+		SetPlayerPos(playerid, randomSpawn[Pos][spawnX], randomSpawn[Pos][spawnY], randomSpawn[Pos][spawnZ]);
+		SetPlayerFacingAngle(playerid, randomSpawn[Pos][spawnA]);
+		pInfo[playerid][posX] = randomSpawn[Pos][spawnX];
+		pInfo[playerid][posY] = randomSpawn[Pos][spawnY];
+		pInfo[playerid][posZ] = randomSpawn[Pos][spawnZ];
+		pInfo[playerid][posA] = randomSpawn[Pos][spawnA];
+		SetPlayerFightingStyle(playerid, randomSpawn[Pos][FightStyle]);
+		pInfo[playerid][FightStyle] = randomSpawn[Pos][FightStyle];
+		new pSkin = random(6)+1;
+		SetPlayerSkin(playerid, randomSkins[Pos][pSkin]);
+		pInfo[playerid][Skin] = randomSkins[Pos][pSkin];
+		FirstLogin[playerid] = 0;
+	} else {
+	    SetPlayerPos(playerid, pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
+	    SetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
+	    SetPlayerSkin(playerid, pInfo[playerid][Skin]);
+	    SetPlayerFightingStyle(playerid, pInfo[playerid][FightStyle]);
+	}
 	return 1;
 }
 
@@ -403,11 +471,18 @@ public AccountLogin(playerid) {
 	cache_get_row_count(Rows);
 	if(Rows >= 1) {
 		SendClientMessage(playerid, COLOR_DARKGREEN, "Login Successful");
+		cache_get_value_name_int(0, "id", pInfo[playerid][id]);
 		cache_get_value_name_int(0, "Adminlevel", pInfo[playerid][Adminlevel]);
 		cache_get_value_name_int(0, "Banned", pInfo[playerid][Banned]);
 		cache_get_value_name(0, "BanReason", pInfo[playerid][BanReason], 45);
 		cache_get_value_name(0, "BanDate", pInfo[playerid][BanDate], 20);
 		cache_get_value_name(0, "BannedBy", pInfo[playerid][BannedBy], MAX_PLAYER_NAME+1);
+		cache_get_value_name_float(0, "posX", pInfo[playerid][posX]);
+		cache_get_value_name_float(0, "posY", pInfo[playerid][posY]);
+		cache_get_value_name_float(0, "posZ", pInfo[playerid][posZ]);
+		cache_get_value_name_float(0, "posA", pInfo[playerid][posA]);
+		cache_get_value_name_int(0, "FightStyle", pInfo[playerid][FightStyle]);
+		cache_get_value_name_int(0, "Skin", pInfo[playerid][Skin]);
 		pInfo[playerid][LoggedIn] = 1;
 		SaveTimer[playerid] = SetTimerEx("SaveAccount", 300000, 1, "i", playerid);
 		SpawnPlayer(playerid);
@@ -423,21 +498,28 @@ public AccountRegister(playerid) {
 	new string[128];
 	format(string, sizeof(string), "Welcome %s, your registration was successful!", Name[playerid]);
 	SendClientMessage(playerid, COLOR_DARKGREEN, string);
+	pInfo[playerid][id] = cache_insert_id();
 	pInfo[playerid][Adminlevel] = 0;
 	pInfo[playerid][Banned] = 0;
 	pInfo[playerid][BanReason] = '\0';
 	pInfo[playerid][BanDate] = '\0';
 	pInfo[playerid][BannedBy] = '\0';
 	pInfo[playerid][LoggedIn] = 1;
+	FirstLogin[playerid] = 1;
 	SaveTimer[playerid] = SetTimerEx("SaveAccount", 300000, 1, "i", playerid);
 	SpawnPlayer(playerid);
 	return 1;
 }
 
 public SaveAccount(playerid) {
-	new Query[1024];
+	new Query[1024], string[256];
 	if(pInfo[playerid][LoggedIn] == 1) {
-		mysql_format(handler, Query, sizeof(Query), "UPDATE `Player` SET `Adminlevel` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e' WHERE `Name` = '%e'", pInfo[playerid][Adminlevel], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy], Name[playerid]);
+		GetPlayerPos(playerid, pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
+		GetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
+		mysql_format(handler, string, sizeof(string), "UPDATE `Player` SET `Adminlevel` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e', \n", pInfo[playerid][Adminlevel], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
+		strcat(Query, string);
+		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `FightStyle` = '%d' WHERE `id` = '%d'", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ], pInfo[playerid][posA], pInfo[playerid][FightStyle], pInfo[playerid][id]);
+		strcat(Query, string);
 		mysql_query(handler, Query);
 	} return 1;
 }
