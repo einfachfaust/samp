@@ -5,8 +5,8 @@
 #include <sscanf2>
 
 #define M_HOST "127.0.0.1"
-#define M_USER "samporg"
-#define M_PASS "W07oDGtwFkDt3o16"
+#define M_USER "root"
+#define M_PASS ""
 #define M_DATA "samporg"
 
 new txtstr[145];
@@ -320,7 +320,6 @@ public OnGameModeInit()
 	
 	SetGameModeText("SA-MP.org v0.1");
 	// --------------------
-	
 	return 1;
 }
 
@@ -571,7 +570,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			printf("dbid: %d, owner: %d", dbid, pInfo[playerid][id]);
 			new Cache:result = mysql_query(handler, string);
 			new i;
-
 			for(; i < MAX_VEHICLES; i++) {
 			    if(GetVehicleModel(i) >= 400) continue;
 			    cache_get_value_name_int(0, "model", vInfo[i][v_model]);
@@ -610,7 +608,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
 			vInfo[i][v_vehicleid] = CreateVehicle(vInfo[i][v_model], gInfo[gID][g_SpawnX1], gInfo[gID][g_SpawnY1], gInfo[gID][g_SpawnZ1], gInfo[gID][g_SpawnR1], vInfo[i][v_color1], vInfo[i][v_color2], -1, 0);
 			SetVehicleNumberPlate(vInfo[i][v_vehicleid], vInfo[i][v_licenseplate]);
-
+			
 			if(vInfo[i][v_spoiler] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_spoiler]);
 			if(vInfo[i][v_hood] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_hood]);
 			if(vInfo[i][v_roof] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_roof]);
@@ -632,6 +630,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(vInfo[i][v_vents] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_vents]);
 			ChangeVehicleColor(vInfo[i][v_vehicleid], vInfo[i][v_color1], vInfo[i][v_color2]);
 			if(vInfo[i][v_paintjob] < 1337) ChangeVehiclePaintjob(vInfo[i][v_vehicleid], vInfo[i][v_paintjob]);
+
+			
+			//PutPlayerInVehicle(playerid, vInfo[i][v_vehicleid], 0);
+			
+			cache_delete(result);
+			print("Fertig");
 
 			cache_delete(result);
 		}
@@ -672,6 +676,7 @@ public AccountLogin(playerid) {
 		SendClientMessage(playerid, COLOR_DARKGREEN, "Login Successful");
 		cache_get_value_name_int(0, "id", pInfo[playerid][id]);
 		cache_get_value_name_int(0, "Adminlevel", pInfo[playerid][Adminlevel]);
+		cache_get_value_name_int(0, "id", pInfo[playerid][id]);
 		cache_get_value_name_int(0, "Banned", pInfo[playerid][Banned]);
 		cache_get_value_name(0, "BanReason", pInfo[playerid][BanReason], 45);
 		cache_get_value_name(0, "BanDate", pInfo[playerid][BanDate], 20);
@@ -713,6 +718,7 @@ public AccountRegister(playerid) {
 public SaveAccount(playerid) {
 	new Query[1024], string[256];
 	if(pInfo[playerid][LoggedIn] == 1) {
+		mysql_format(handler, Query, sizeof(Query), "UPDATE `Player` SET `Adminlevel` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e' WHERE `id` = '%d'", pInfo[playerid][Adminlevel], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy], pInfo[playerid][id]);
 		GetPlayerPos(playerid, pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
 		GetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
 		mysql_format(handler, string, sizeof(string), "UPDATE `Player` SET `Adminlevel` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e', \n", pInfo[playerid][Adminlevel], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
