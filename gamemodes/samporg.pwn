@@ -3,11 +3,7 @@
 #include <a_mysql>
 #include <streamer>
 #include <sscanf2>
-
-#define M_HOST "127.0.0.1"
-#define M_USER "root"
-#define M_PASS ""
-#define M_DATA "samporg"
+#include <mysql_connect>
 
 new txtstr[145];
 #define SendFormMessage(%0,%1,%2,%3) format(txtstr, 145, %2, %3) && SendClientMessage(%0, %1, txtstr)
