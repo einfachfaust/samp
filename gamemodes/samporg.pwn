@@ -20,6 +20,7 @@ new txtstr[145];
 #define COLOR_YELLOW 0xEEEE00FF
 #define COLOR_ADMINRED 0x8B2500FF
 #define COLOR_WHITE 0xFFFFFFFF
+#define COLOR_GREEN 0x00EE00FF
 // ------------------
 
 // ----- Defines -----
@@ -32,7 +33,19 @@ new txtstr[145];
 enum {
 	D_LOGIN,
 	D_REGISTER,
-	D_SHOWPLAYERVEHS
+	D_SHOWPLAYERVEHS,
+	D_TRAVELLSTS,
+	D_TRAVELLSM,
+	D_TRAVELSFFV,
+	D_TRAVELSFTS,
+	D_TRAVELLVOS,
+	D_TRAVELLVSR,
+	D_TRAVELLVTS,
+	D_TRAVELLVSB,
+	D_TRAVELLVS,
+	D_TRAVELLVL,
+	DTRAVELELS,
+	D_TRAVELLSI
 };
 // -------------------
 enum PlayerData {
@@ -179,6 +192,26 @@ new randomSkins[][6] = {
 	{161, 128, 160, 168, 151, 129}, // AngelPine
 	{123, 121, 229, 117, 141, 169} // Chinatown
 };
+enum TravelData {
+	tID,
+	Float:tX,
+	Float:tY,
+	Float:tZ
+}
+new TravelPos[][TravelData] = {
+	{1, 1757.1107, -1944.0425, 13.5681}, // Los Santos Train Station
+	{2, 825.0736, -1353.6986, 13.5369}, // Los Santos Metro
+	{3, -1975.3186, -569.3350, 25.6802}, // San Fierro Foster Valley
+	{4, -1973.9847, 117.5540, 27.6875}, // San Fierro Train Station
+	{5, 571.1689, 1217.9426, 11.7905}, // Las Venturas Octane Spring
+	{6, 730.0837, 1932.4736, 5.5391}, // Las Venturas Spread Ranch
+	{7, 1436.2892, 2656.8005, 11.3926}, // Las Venturas Train Station
+	{8, 2379.0972, 2700.7095, 10.8081}, // Las Venturas Spiny Bed
+	{9, 2778.3882, 1732.4832, 11.3926}, // Las Ventural Sobell
+	{10, 2857.7542, 1314.5885, 11.3906}, // Las Ventural Linden
+	{11, 2295.1128, -1158.7957, 26.6275}, // East Los Santos
+	{12, 2218.1255, -1657.0381, 15.1890} // Los Santos Idlewood
+};
 
 main() {
 	print("\n");
@@ -302,22 +335,130 @@ ocmd:loadcar(playerid, params[])
 	return 1;
 }
 
+ocmd:veh(playerid, params[]) {
+	new vehicle[25], sCar, Float:X, Float:Y, Float:Z, Float:A, aVehicle, color1, color2;
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	if(sscanf(params, "s[25]dd", vehicle, color1, color2)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /veh <VehicleID/VehicleName> <Color1> <Color2>");
+	if(!IsNumeric(vehicle)) sCar = GetVehicleModelFromName(vehicle);
+	else sCar = strval(vehicle);
+	if(sCar == -1) return SendFormMessage(playerid, COLOR_GREY, "The vehicle %s can't be found!", vehicle);
+	GetPlayerPos(playerid, X, Y, Z);
+	GetPlayerFacingAngle(playerid, A);
+	aVehicle = CreateVehicle(sCar, X, Y, Z, A, color1, color2, -1);
+	PutPlayerInVehicle(playerid, aVehicle, 0);
+	return 1;
+}
+
+ocmd:dveh(playerid, params[]) {
+	new vehicle;
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	if(sscanf(params, "d", vehicle)) {
+		if(!IsPlayerInAnyVehicle(playerid)) {
+			SendClientMessage(playerid, COLOR_GREY, "You need to be in a vehicle or give a vehicleid");
+			SendClientMessage(playerid, COLOR_GREY, "Usage: /dveh <VehicleID>");
+			return 1;
+		} else {
+			DestroyVehicle(GetPlayerVehicleID(playerid));
+			SendFormMessage(playerid, COLOR_WHITE, "You have deleted the vehicle %d", GetPlayerVehicleID(playerid));
+			return 1;
+		}
+	} else {
+		if(!GetVehicleModel(vehicle)) {
+			return SendClientMessage(playerid, COLOR_GREY, "This vehicle doesn't exists!");
+		} else {
+			DestroyVehicle(vehicle);
+			SendFormMessage(playerid, COLOR_WHITE, "You have deleted the vehicle %d", vehicle);
+			return 1;
+		}
+	}
+}
+
+ocmd:fixveh(playerid) {
+	if(pInfo[playerid][Adminlevel] < 1) return NoPermission(playerid);
+	if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, COLOR_GREY, "You need to be in a vehicle!");
+	RepairVehicle(GetPlayerVehicleID(playerid));
+	SendClientMessage(playerid, COLOR_GREEN, "Your vehicle was successfully repaired!");
+	return 1;
+}
+
+ocmd:travel(playerid) {
+	if(pInfo[playerid][LoggedIn] == 0) return 1;
+	for(new i = 0; i < sizeof(TravelPos); i++) {
+		if(IsPlayerInRangeOfPoint(playerid, 3.0, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ])) {
+			if(i == 0) {
+				ShowPlayerDialog(playerid, D_TRAVELLSTS, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spinybed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 1) {
+				ShowPlayerDialog(playerid, D_TRAVELLSM, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 2) {
+				ShowPlayerDialog(playerid, D_TRAVELSFFV, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 3) {
+				ShowPlayerDialog(playerid, D_TRAVELSFTS, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 4) {
+				ShowPlayerDialog(playerid, D_TRAVELLVOS, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 5) {
+				ShowPlayerDialog(playerid, D_TRAVELLVSR, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 6) {
+				ShowPlayerDialog(playerid, D_TRAVELLVTS, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 7) {
+				ShowPlayerDialog(playerid, D_TRAVELLVSB, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 8) {
+				ShowPlayerDialog(playerid, D_TRAVELLVS, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 9) {
+				ShowPlayerDialog(playerid, D_TRAVELLVL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "East Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 10) {
+				ShowPlayerDialog(playerid, DTRAVELELS, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 11) {
+				ShowPlayerDialog(playerid, D_TRAVELLSI, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			}
+		} return SendClientMessage(playerid, COLOR_GREY, "You are not at a train station!");
+	} return 1;
+}
+
 public OnGameModeInit()
 {
 	mysql_log(ALL);
 	handler = mysql_connect(M_HOST, M_USER, M_PASS, M_DATA);
 	if(mysql_errno() != 0) printf("Database connection could not be established! (%d)", mysql_errno());
 	else print("Database connection successfully established!");
-	
+
 	CreateVehicle(560, 2406.4075, -1391.0314, 23.8891, 359.8459, -1, -1, 0, 0);
-	
+
 	LoadGarages();
+
+	for(new i = 0; i < sizeof(TravelPos); i++) {
+		CreateDynamicPickup(1239, 1, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ]);
+		CreateDynamic3DTextLabel("Trainstation\n\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
+	}
 
 	// ----- Disables/Settings -----
 	DisableInteriorEnterExits();
 	EnableStuntBonusForAll(0);
 	UsePlayerPedAnims();
-	
+
 	SetGameModeText("SA-MP.org v0.1");
 	// --------------------
 	return 1;
@@ -448,6 +589,9 @@ public OnRconCommand(cmd[])
 
 public OnPlayerRequestSpawn(playerid)
 {
+	if(pInfo[playerid][LoggedIn] == 0 && !IsPlayerNPC(playerid)) {
+		return Kick(playerid);
+	}
 	return 1;
 }
 
@@ -608,7 +752,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
 			vInfo[i][v_vehicleid] = CreateVehicle(vInfo[i][v_model], gInfo[gID][g_SpawnX1], gInfo[gID][g_SpawnY1], gInfo[gID][g_SpawnZ1], gInfo[gID][g_SpawnR1], vInfo[i][v_color1], vInfo[i][v_color2], -1, 0);
 			SetVehicleNumberPlate(vInfo[i][v_vehicleid], vInfo[i][v_licenseplate]);
-			
+
 			if(vInfo[i][v_spoiler] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_spoiler]);
 			if(vInfo[i][v_hood] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_hood]);
 			if(vInfo[i][v_roof] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_roof]);
@@ -631,9 +775,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			ChangeVehicleColor(vInfo[i][v_vehicleid], vInfo[i][v_color1], vInfo[i][v_color2]);
 			if(vInfo[i][v_paintjob] < 1337) ChangeVehiclePaintjob(vInfo[i][v_vehicleid], vInfo[i][v_paintjob]);
 
-			
+
 			//PutPlayerInVehicle(playerid, vInfo[i][v_vehicleid], 0);
-			
+
 			cache_delete(result);
 			print("Fertig");
 
@@ -819,4 +963,18 @@ stock LoadGarages()
 		CreateDynamic3DTextLabel(label, COLOR_WHITE, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ], 15);
 	}
 	return 1;
+}
+
+stock GetVehicleModelFromName(vehName[]) {
+	for(new i = 0; i < 211; i++) {
+		if(strfind(VehNames[i], vehName, true) != -1)
+			return i + 400;
+	} return -1;
+}
+
+stock IsNumeric(string[]) {
+	for (new i = 0, j = strlen(string); i < j; i++)
+	{
+		if(string[i] > '9' || string[i] < '0') return 0;
+	} return 1;
 }
