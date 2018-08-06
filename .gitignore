@@ -1,9 +1,7 @@
-<<<<<<< HEAD
 crashinfo.txt
 server_log.txt
-=======
 server.cfg
 server_log.txt
 crashinfo.txt
 .atom-build.json
->>>>>>> VehicleSystem
+pawno/include/mysql_connect.inc

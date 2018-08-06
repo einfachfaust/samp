@@ -1,4 +1,4 @@
 #define M_HOST "127.0.0.1"
-#define M_USER "CHANGEME"
-#define M_PASS "CHANGEME"
-#define M_DATA "CHANGEME"
+#define M_USER "root"
+#define M_PASS "W07oDGtwFkDt3o16"
+#define M_DATA "samporg"
