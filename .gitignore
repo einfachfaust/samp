@@ -5,4 +5,5 @@ server_log.txt
 server.cfg
 server_log.txt
 crashinfo.txt
+.atom-build.json
 >>>>>>> VehicleSystem
