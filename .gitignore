@@ -5,3 +5,4 @@ server_log.txt
 crashinfo.txt
 .atom-build.json
 pawno/include/mysql_connect.inc
+gamemodes/samporg.amx
