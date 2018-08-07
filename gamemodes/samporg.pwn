@@ -337,8 +337,8 @@ ocmd:loadcar(playerid, params[])
 {
 	for(new i; i < sizeof(gInfo); i++)
 	{
-	    if(!IsPlayerInRangeOfPoint(playerid, 3, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ])) continue;
-	    new string[256];
+		if(!IsPlayerInRangeOfPoint(playerid, 3, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ])) continue;
+		new string[256];
 		mysql_format(handler, string, sizeof(string), "SELECT * FROM `vehicles` WHERE `owner` = '%d'", pInfo[playerid][id]);
 		mysql_pquery(handler, string, "ShowPlayerVehicles", "dd", playerid, i);
 		return 1;
@@ -352,7 +352,7 @@ ocmd:veh(playerid, params[]) {
 	if(sscanf(params, "s[25]dd", vehicle, color1, color2)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /veh <VehicleID/VehicleName> <Color1> <Color2>");
 	if(!IsNumeric(vehicle)) sCar = GetVehicleModelFromName(vehicle);
 	else sCar = strval(vehicle);
-	if(sCar == -1) return SendFormMessage(playerid, COLOR_GREY, "The vehicle %s can't be found!", vehicle);
+	if(sCar == -1) return SendFormMessage(playerid, COLOR_GREY, "The vehicle %s can not be found!", vehicle);
 	GetPlayerPos(playerid, X, Y, Z);
 	GetPlayerFacingAngle(playerid, A);
 	aVehicle = CreateVehicle(sCar, X, Y, Z, A, color1, color2, -1);
@@ -487,12 +487,12 @@ public OnGameModeInit()
 	handler = mysql_connect(M_HOST, M_USER, M_PASS, M_DATA);
 	if(mysql_errno() != 0) printf("Database connection could not be established! (%d)", mysql_errno());
 	else print("Database connection successfully established!");
-	
+
 	mysql_pquery(handler, "SELECT * FROM `garages`", "LoadGarages");
 
 	for(new i = 0; i < sizeof(TravelPos); i++) {
 		CreateDynamicPickup(1239, 1, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ]);
-		CreateDynamic3DTextLabel("Trainstation\n\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
+		CreateDynamic3DTextLabel("{9A2D25}Train Station{EEEE00}\n\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
 	}
 
 	// ----- Disables/Settings -----
@@ -765,7 +765,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		    new dbid, trash[10], string[128], plate[15], Float:Coords[4], gID = GetNearestGarage(playerid), Park[4] = false;
 			sscanf(inputtext, "s[4]d", trash, dbid);
 			mysql_format(handler, string, sizeof(string), "SELECT * FROM `vehicles` WHERE `id` = '%d' AND `owner` = '%d'", dbid, pInfo[playerid][id]);
-			
+
 			for(new j = 1, d = GetVehiclePoolSize() + 1; j < d; j++)
 			{
 			    if(j == INVALID_VEHICLE_ID) continue;
@@ -780,7 +780,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			else if(!Park[2]) Coords[0] = gInfo[gID][g_SpawnX3], Coords[1] = gInfo[gID][g_SpawnY3], Coords[2] = gInfo[gID][g_SpawnZ3], Coords[3] = gInfo[gID][g_SpawnR3];
 			else if(!Park[3]) Coords[0] = gInfo[gID][g_SpawnX4], Coords[1] = gInfo[gID][g_SpawnY4], Coords[2] = gInfo[gID][g_SpawnZ4], Coords[3] = gInfo[gID][g_SpawnR4];
 			else return SendClientMessage(playerid, COLOR_RED, "Can't find a place to park.");
-			
+
 			new Cache:result = mysql_query(handler, string);
 			new i = 0, y = GetVehiclePoolSize() + 1;
 			for(; i < y; i++) {
@@ -816,7 +816,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				vInfo[i][v_vehicleid] = i;
 				break;
 			}
-			
+
 			vInfo[i][v_vehicleid] = CreateVehicle(vInfo[i][v_model], Coords[0], Coords[1], Coords[2], Coords[3], vInfo[i][v_color1], vInfo[i][v_color2], -1, 0);
 			SetVehicleNumberPlate(vInfo[i][v_vehicleid], vInfo[i][v_licenseplate]);
 
@@ -980,34 +980,34 @@ public LoadGarages()
 	    cache_get_value_name_float(i, "GarageX", gInfo[i][g_GarageX]);
 		cache_get_value_name_float(i, "GarageY", gInfo[i][g_GarageY]);
 		cache_get_value_name_float(i, "GarageZ", gInfo[i][g_GarageZ]);
-		
+
 		cache_get_value_name_float(i, "SpawnX1", gInfo[i][g_SpawnX1]);
 		cache_get_value_name_float(i, "SpawnY1", gInfo[i][g_SpawnY1]);
 		cache_get_value_name_float(i, "SpawnZ1", gInfo[i][g_SpawnZ1]);
 		cache_get_value_name_float(i, "SpawnR1", gInfo[i][g_SpawnR1]);
-		
+
 		cache_get_value_name_float(i, "SpawnX2", gInfo[i][g_SpawnX2]);
 		cache_get_value_name_float(i, "SpawnY2", gInfo[i][g_SpawnY2]);
 		cache_get_value_name_float(i, "SpawnZ2", gInfo[i][g_SpawnZ2]);
 		cache_get_value_name_float(i, "SpawnR2", gInfo[i][g_SpawnR2]);
-		
+
 		cache_get_value_name_float(i, "SpawnX3", gInfo[i][g_SpawnX3]);
 		cache_get_value_name_float(i, "SpawnY3", gInfo[i][g_SpawnY3]);
 		cache_get_value_name_float(i, "SpawnZ3", gInfo[i][g_SpawnZ3]);
 		cache_get_value_name_float(i, "SpawnR3", gInfo[i][g_SpawnR3]);
-		
+
 		cache_get_value_name_float(i, "SpawnX4", gInfo[i][g_SpawnX4]);
 		cache_get_value_name_float(i, "SpawnY4", gInfo[i][g_SpawnY4]);
 		cache_get_value_name_float(i, "SpawnZ4", gInfo[i][g_SpawnZ4]);
 		cache_get_value_name_float(i, "SpawnR4", gInfo[i][g_SpawnR4]);
-		
+
 		cache_get_value_name_int(i, "Type", gInfo[i][g_Type]);
-		
+
 		cache_get_value_name(i, "Name", name);
 		format(gInfo[i][g_Name], sizeof(name), name);
-		
+
 		gInfo[i][g_id] = i;
-		
+
 		format(label, sizeof(label), "Garage '%s' (ID: %d)\n\nUsage: /loadcar", gInfo[i][g_Name], i);
 	    gInfo[i][g_Pickup] = CreateDynamicPickup(19132, 20, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ]);
 		gInfo[i][g_3DText] = CreateDynamic3DTextLabel(label, COLOR_WHITE, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ], 15);
@@ -1037,7 +1037,7 @@ stock currentTime(type = 1) {
 	} return cTime;
 }
 
-public ShowPlayerVehicles(playerid, garageid)
+public ShowPlayerVehicles(playerid, garageid) {
 	new rows;
 	cache_get_row_count(rows);
 	if(!rows) return SendClientMessage(playerid, COLOR_RED, "You did not have any vehicles.");
@@ -1080,8 +1080,7 @@ stock GetNearestGarage(playerid) {
 	}	return garage;
 }
 
-stock IsVehicleInRangeOfPoint(vehicleid, Float:Range, Float:X, Float:Y, Float:Z)
-{
+stock IsVehicleInRangeOfPoint(vehicleid, Float:Range, Float:X, Float:Y, Float:Z) {
     new Float:VDistance = GetVehicleDistanceFromPoint(vehicleid, X, Y, Z);
     if(VDistance <= Range) return 1;
 	return 0;
