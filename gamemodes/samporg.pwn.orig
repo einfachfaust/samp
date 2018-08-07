@@ -761,8 +761,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			mysql_tquery(handler, Query, "AccountRegister", "i", playerid);
 		}
 		case D_SHOWPLAYERVEHS: {
-			if(!response) return 1;
+<<<<<<< HEAD
+		    if(!response) return 1;
 		    new dbid, trash[10], string[128], plate[15], Float:Coords[4], gID = GetNearestGarage(playerid), Park[4] = false;
+=======
+			if(!response) return 1;
+			new dbid, trash[10], string[128], plate[15];
+>>>>>>> cdad53fd766df0327e59c439eb54de4b84dec698
 			sscanf(inputtext, "s[4]d", trash, dbid);
 			mysql_format(handler, string, sizeof(string), "SELECT * FROM `vehicles` WHERE `id` = '%d' AND `owner` = '%d'", dbid, pInfo[playerid][id]);
 			
@@ -782,8 +787,43 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			else return SendClientMessage(playerid, COLOR_RED, "Can't find a place to park.");
 			
 			new Cache:result = mysql_query(handler, string);
+<<<<<<< HEAD
 			new i = 0, y = GetVehiclePoolSize() + 1;
 			for(; i < y; i++) {
+			    if(GetVehicleModel(i) >= 400) continue;
+			    cache_get_value_name_int(0, "model", vInfo[i][v_model]);
+			    cache_get_value_name(0, "licenseplate", plate, sizeof(plate));
+			    format(vInfo[i][v_licenseplate], sizeof(plate), plate);
+			    cache_get_value_name_int(0, "kilometers", vInfo[i][v_kilometers]);
+			    cache_get_value_name_int(0, "owner", vInfo[i][v_owner]);
+			    cache_get_value_name_int(0, "tank", vInfo[i][v_tank]);
+			    cache_get_value_name_int(0, "color1", vInfo[i][v_color1]);
+			    cache_get_value_name_int(0, "color2", vInfo[i][v_color2]);
+			    cache_get_value_name_int(0, "paintjob", vInfo[i][v_paintjob]);
+			    cache_get_value_name_int(0, "spoiler", vInfo[i][v_spoiler]);
+			    cache_get_value_name_int(0, "hood", vInfo[i][v_hood]);
+			    cache_get_value_name_int(0, "roof", vInfo[i][v_roof]);
+			    cache_get_value_name_int(0, "sideskirt_left", vInfo[i][v_sideskirt_left]);
+			    cache_get_value_name_int(0, "sideskirt_right", vInfo[i][v_sideskirt_right]);
+			    cache_get_value_name_int(0, "nitro", vInfo[i][v_nitro]);
+			    cache_get_value_name_int(0, "lamps", vInfo[i][v_lamps]);
+			    cache_get_value_name_int(0, "exhaust", vInfo[i][v_exhaust]);
+			    cache_get_value_name_int(0, "wheels", vInfo[i][v_wheels]);
+			    cache_get_value_name_int(0, "stereo", vInfo[i][v_stereo]);
+			    cache_get_value_name_int(0, "hydraulics", vInfo[i][v_hydraulics]);
+			    cache_get_value_name_int(0, "bullbar", vInfo[i][v_bullbar]);
+			    cache_get_value_name_int(0, "bullbar_rear", vInfo[i][v_bullbar_rear]);
+			    cache_get_value_name_int(0, "bullbar_front", vInfo[i][v_bullbar_front]);
+			    cache_get_value_name_int(0, "sign_front", vInfo[i][v_sign_front]);
+			    cache_get_value_name_int(0, "bumper_front", vInfo[i][v_bumper_front]);
+			    cache_get_value_name_int(0, "bumper_rear", vInfo[i][v_bumper_rear]);
+			    cache_get_value_name_int(0, "bullbars", vInfo[i][v_bullbars]);
+			    cache_get_value_name_int(0, "vents", vInfo[i][v_vents]);
+			    vInfo[i][v_vehicleid] = i;
+			    break;
+=======
+			new i;
+			for(; i < MAX_VEHICLES; i++) {
 				if(GetVehicleModel(i) >= 400) continue;
 				cache_get_value_name_int(0, "model", vInfo[i][v_model]);
 				cache_get_value_name(0, "licenseplate", plate, sizeof(plate));
@@ -815,6 +855,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				cache_get_value_name_int(0, "vents", vInfo[i][v_vents]);
 				vInfo[i][v_vehicleid] = i;
 				break;
+>>>>>>> cdad53fd766df0327e59c439eb54de4b84dec698
 			}
 			
 			vInfo[i][v_vehicleid] = CreateVehicle(vInfo[i][v_model], Coords[0], Coords[1], Coords[2], Coords[3], vInfo[i][v_color1], vInfo[i][v_color2], -1, 0);
@@ -1037,7 +1078,12 @@ stock currentTime(type = 1) {
 	} return cTime;
 }
 
+<<<<<<< HEAD
 public ShowPlayerVehicles(playerid, garageid)
+{
+=======
+public ShowPlayerVehicles(playerid) {
+>>>>>>> cdad53fd766df0327e59c439eb54de4b84dec698
 	new rows;
 	cache_get_row_count(rows);
 	if(!rows) return SendClientMessage(playerid, COLOR_RED, "You did not have any vehicles.");
@@ -1080,11 +1126,22 @@ stock GetNearestGarage(playerid) {
 	}	return garage;
 }
 
+<<<<<<< HEAD
 stock IsVehicleInRangeOfPoint(vehicleid, Float:Range, Float:X, Float:Y, Float:Z)
 {
     new Float:VDistance = GetVehicleDistanceFromPoint(vehicleid, X, Y, Z);
     if(VDistance <= Range) return 1;
 	return 0;
+=======
+stock LoadGarages() {
+	gInfo[0][g_SpawnX1] = 2375.8301; gInfo[0][g_SpawnY1] = -1389.0652; gInfo[0][g_SpawnZ1] = 23.6478; gInfo[0][g_SpawnR1] = 268.0640; // East Los Santos
+	new label[64];
+	for(new i; i < sizeof(gInfo); i++) {
+		format(label, sizeof(label), "Garage %d\n\nUsage: /loadcar", i);
+		CreateDynamicPickup(19132, 20, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ]);
+		CreateDynamic3DTextLabel(label, COLOR_WHITE, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ], 15);
+	}	return 1;
+>>>>>>> cdad53fd766df0327e59c439eb54de4b84dec698
 }
 
 stock GetVehicleModelFromName(vehName[]) {
