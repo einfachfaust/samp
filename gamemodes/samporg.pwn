@@ -5,8 +5,8 @@
 #include <sscanf2>
 
 #define M_HOST "127.0.0.1"
-#define M_USER "samporg"
-#define M_PASS "W07oDGtwFkDt3o16"
+#define M_USER "root"
+#define M_PASS ""
 #define M_DATA "samporg"
 
 new txtstr[145];
@@ -34,7 +34,8 @@ enum {
 	D_LOGIN,
 	D_REGISTER,
 	D_SHOWPLAYERVEHS,
-	D_TRAVEL
+	D_TRAVEL,
+	D_RELOAD
 };
 // -------------------
 enum PlayerData {
@@ -89,6 +90,11 @@ enum VehicleData {
 new vInfo[MAX_VEHICLES][VehicleData];
 
 enum GarageData {
+	g_id,
+	g_Name[64],
+	Text3D:g_3DText,
+	g_Pickup,
+	g_Type,
 	Float:g_GarageX,
 	Float:g_GarageY,
 	Float:g_GarageZ,
@@ -153,7 +159,8 @@ forward AccountLogin(playerid);
 forward AccountRegister(playerid);
 forward SaveAccount(playerid);
 forward KickPlayer(playerid);
-forward ShowPlayerVehicles(playerid);
+forward ShowPlayerVehicles(playerid, garageid);
+forward LoadGarages();
 
 new MySQL:handler;
 new Name[MAX_PLAYER_NAME][MAX_PLAYERS];
@@ -325,10 +332,15 @@ ocmd:gmx(playerid, params[]) {
 
 ocmd:loadcar(playerid, params[])
 {
-	new string[256];
-	mysql_format(handler, string, sizeof(string), "SELECT * FROM `vehicles` WHERE `owner` = '%d'", pInfo[playerid][id]);
-	mysql_pquery(handler, string, "ShowPlayerVehicles", "d", playerid);
-	return 1;
+	for(new i; i < sizeof(gInfo); i++)
+	{
+	    if(!IsPlayerInRangeOfPoint(playerid, 3, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ])) continue;
+	    new string[256];
+		mysql_format(handler, string, sizeof(string), "SELECT * FROM `vehicles` WHERE `owner` = '%d'", pInfo[playerid][id]);
+		mysql_pquery(handler, string, "ShowPlayerVehicles", "dd", playerid, i);
+		return 1;
+	}
+	return SendClientMessage(playerid, COLOR_WHITE, "You are not at a garage.");
 }
 
 ocmd:veh(playerid, params[]) {
@@ -450,16 +462,23 @@ ocmd:gotomark(playerid) {
 	return SendClientMessage(playerid, COLOR_WHITE, "You have successfully teleported to your marked position!");
 }
 
+ocmd:reload(playerid, params[])
+{
+	if(pInfo[playerid][Adminlevel] < 3) return NoPermission(playerid);
+	ShowPlayerDialog(playerid, D_RELOAD, DIALOG_STYLE_LIST, "{FFFFFF}Systems:", "{FFFFFF}Garage", "Reload", "Close");
+	return 1;
+}
+
+
+
 public OnGameModeInit()
 {
 	mysql_log(ALL);
 	handler = mysql_connect(M_HOST, M_USER, M_PASS, M_DATA);
 	if(mysql_errno() != 0) printf("Database connection could not be established! (%d)", mysql_errno());
 	else print("Database connection successfully established!");
-
-	CreateVehicle(560, 2406.4075, -1391.0314, 23.8891, 359.8459, -1, -1, 0, 0);
-
-	LoadGarages();
+	
+	mysql_pquery(handler, "SELECT * FROM `garages`", "LoadGarages");
 
 	for(new i = 0; i < sizeof(TravelPos); i++) {
 		CreateDynamicPickup(1239, 1, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ]);
@@ -721,13 +740,28 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		}
 		case D_SHOWPLAYERVEHS: {
 		    if(!response) return 1;
-		    new dbid, trash[10], string[128], plate[15];
+		    new dbid, trash[10], string[128], plate[15], Float:Coords[4], gID = GetNearestGarage(playerid), Park[4] = false;
 			sscanf(inputtext, "s[4]d", trash, dbid);
 			mysql_format(handler, string, sizeof(string), "SELECT * FROM `vehicles` WHERE `id` = '%d' AND `owner` = '%d'", dbid, pInfo[playerid][id]);
-			printf("dbid: %d, owner: %d", dbid, pInfo[playerid][id]);
+			
+			for(new j = 1, d = GetVehiclePoolSize() + 1; j < d; j++)
+			{
+			    if(j == INVALID_VEHICLE_ID) continue;
+			    if(IsVehicleInRangeOfPoint(j, 2.0, gInfo[gID][g_SpawnX1], gInfo[gID][g_SpawnY1], gInfo[gID][g_SpawnZ1])) Park[0] = true;
+			    if(IsVehicleInRangeOfPoint(j, 2.0, gInfo[gID][g_SpawnX2], gInfo[gID][g_SpawnY2], gInfo[gID][g_SpawnZ2])) Park[1] = true;
+			   	if(IsVehicleInRangeOfPoint(j, 2.0, gInfo[gID][g_SpawnX3], gInfo[gID][g_SpawnY3], gInfo[gID][g_SpawnZ3])) Park[2] = true;
+			    if(IsVehicleInRangeOfPoint(j, 2.0, gInfo[gID][g_SpawnX4], gInfo[gID][g_SpawnY4], gInfo[gID][g_SpawnZ4])) Park[3] = true;
+			    continue;
+			}
+			if(!Park[0]) Coords[0] = gInfo[gID][g_SpawnX1], Coords[1] = gInfo[gID][g_SpawnY1], Coords[2] = gInfo[gID][g_SpawnZ1], Coords[3] = gInfo[gID][g_SpawnR1];
+			else if(!Park[1]) Coords[0] = gInfo[gID][g_SpawnX2], Coords[1] = gInfo[gID][g_SpawnY2], Coords[2] = gInfo[gID][g_SpawnZ2], Coords[3] = gInfo[gID][g_SpawnR2];
+			else if(!Park[2]) Coords[0] = gInfo[gID][g_SpawnX3], Coords[1] = gInfo[gID][g_SpawnY3], Coords[2] = gInfo[gID][g_SpawnZ3], Coords[3] = gInfo[gID][g_SpawnR3];
+			else if(!Park[3]) Coords[0] = gInfo[gID][g_SpawnX4], Coords[1] = gInfo[gID][g_SpawnY4], Coords[2] = gInfo[gID][g_SpawnZ4], Coords[3] = gInfo[gID][g_SpawnR4];
+			else return SendClientMessage(playerid, COLOR_RED, "Can't find a place to park.");
+			
 			new Cache:result = mysql_query(handler, string);
-			new i;
-			for(; i < MAX_VEHICLES; i++) {
+			new i = 0, y = GetVehiclePoolSize() + 1;
+			for(; i < y; i++) {
 			    if(GetVehicleModel(i) >= 400) continue;
 			    cache_get_value_name_int(0, "model", vInfo[i][v_model]);
 			    cache_get_value_name(0, "licenseplate", plate, sizeof(plate));
@@ -760,10 +794,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			    vInfo[i][v_vehicleid] = i;
 			    break;
 			}
-
-			new gID = GetNearestGarage(playerid);
-
-			vInfo[i][v_vehicleid] = CreateVehicle(vInfo[i][v_model], gInfo[gID][g_SpawnX1], gInfo[gID][g_SpawnY1], gInfo[gID][g_SpawnZ1], gInfo[gID][g_SpawnR1], vInfo[i][v_color1], vInfo[i][v_color2], -1, 0);
+			
+			vInfo[i][v_vehicleid] = CreateVehicle(vInfo[i][v_model], Coords[0], Coords[1], Coords[2], Coords[3], vInfo[i][v_color1], vInfo[i][v_color2], -1, 0);
 			SetVehicleNumberPlate(vInfo[i][v_vehicleid], vInfo[i][v_licenseplate]);
 
 			if(vInfo[i][v_spoiler] > 0) AddVehicleComponent(vInfo[i][v_vehicleid], vInfo[i][v_spoiler]);
@@ -788,13 +820,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			ChangeVehicleColor(vInfo[i][v_vehicleid], vInfo[i][v_color1], vInfo[i][v_color2]);
 			if(vInfo[i][v_paintjob] < 1337) ChangeVehiclePaintjob(vInfo[i][v_vehicleid], vInfo[i][v_paintjob]);
 
-
-			//PutPlayerInVehicle(playerid, vInfo[i][v_vehicleid], 0);
-
 			cache_delete(result);
-			print("Fertig");
-
-			cache_delete(result);
+			SendClientMessage(playerid, COLOR_RED, "Vehicle successfully parked.");
+			return 1;
 		}
 		case D_TRAVEL: {
 			if(!response) return 1;
@@ -806,6 +834,16 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			GivePlayerMoney(playerid, -45);
 			DeletePVar(playerid, "Travel");
 			return 1;
+		}
+		case D_RELOAD: {
+			for(new i; i < sizeof(gInfo); i++)
+			{
+			    if(IsValidDynamicPickup(gInfo[i][g_Pickup])) DestroyDynamicPickup(gInfo[i][g_Pickup]);
+			    if(IsValidDynamic3DTextLabel(gInfo[i][g_3DText])) DestroyDynamic3DTextLabel(gInfo[i][g_3DText]);
+			}
+			mysql_pquery(handler, "SELECT * FROM `garages`", "LoadGarages");
+			SendClientMessage(playerid, COLOR_RED, "Garages have been reloaded successfully.");
+		    return 1;
 		}
 	}
 	return 1;
@@ -905,6 +943,54 @@ public KickPlayer(playerid) {
 	return Kick(playerid);
 }
 
+public LoadGarages()
+{
+    print("Loading garages..");
+	new rows, var;
+    cache_get_row_count(rows);
+	if(!rows) return print("Could not find any Garages to load.");
+	new name[64], label[64];
+	for(new i; i < rows; i++)
+	{
+	    cache_get_value_name_float(i, "GarageX", gInfo[i][g_GarageX]);
+		cache_get_value_name_float(i, "GarageY", gInfo[i][g_GarageY]);
+		cache_get_value_name_float(i, "GarageZ", gInfo[i][g_GarageZ]);
+		
+		cache_get_value_name_float(i, "SpawnX1", gInfo[i][g_SpawnX1]);
+		cache_get_value_name_float(i, "SpawnY1", gInfo[i][g_SpawnY1]);
+		cache_get_value_name_float(i, "SpawnZ1", gInfo[i][g_SpawnZ1]);
+		cache_get_value_name_float(i, "SpawnR1", gInfo[i][g_SpawnR1]);
+		
+		cache_get_value_name_float(i, "SpawnX2", gInfo[i][g_SpawnX2]);
+		cache_get_value_name_float(i, "SpawnY2", gInfo[i][g_SpawnY2]);
+		cache_get_value_name_float(i, "SpawnZ2", gInfo[i][g_SpawnZ2]);
+		cache_get_value_name_float(i, "SpawnR2", gInfo[i][g_SpawnR2]);
+		
+		cache_get_value_name_float(i, "SpawnX3", gInfo[i][g_SpawnX3]);
+		cache_get_value_name_float(i, "SpawnY3", gInfo[i][g_SpawnY3]);
+		cache_get_value_name_float(i, "SpawnZ3", gInfo[i][g_SpawnZ3]);
+		cache_get_value_name_float(i, "SpawnR3", gInfo[i][g_SpawnR3]);
+		
+		cache_get_value_name_float(i, "SpawnX4", gInfo[i][g_SpawnX4]);
+		cache_get_value_name_float(i, "SpawnY4", gInfo[i][g_SpawnY4]);
+		cache_get_value_name_float(i, "SpawnZ4", gInfo[i][g_SpawnZ4]);
+		cache_get_value_name_float(i, "SpawnR4", gInfo[i][g_SpawnR4]);
+		
+		cache_get_value_name_int(i, "Type", gInfo[i][g_Type]);
+		
+		cache_get_value_name(i, "Name", name);
+		format(gInfo[i][g_Name], sizeof(name), name);
+		
+		gInfo[i][g_id] = i;
+		
+		format(label, sizeof(label), "Garage '%s' (ID: %d)\n\nUsage: /loadcar", gInfo[i][g_Name], i);
+	    gInfo[i][g_Pickup] = CreateDynamicPickup(19132, 20, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ]);
+		gInfo[i][g_3DText] = CreateDynamic3DTextLabel(label, COLOR_WHITE, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ], 15);
+		var++;
+	}
+	return printf("%d/%d garages loaded sucsessfully.", var, rows);
+}
+
 stock NoPermission(playerid) {
 	return SendClientMessage(playerid, COLOR_GREY, "You have no permission to use this command!");
 }
@@ -926,21 +1012,19 @@ stock currentTime(type = 1) {
 	} return cTime;
 }
 
-public ShowPlayerVehicles(playerid)
+public ShowPlayerVehicles(playerid, garageid)
 {
 	new rows;
 	cache_get_row_count(rows);
 	if(!rows) return SendClientMessage(playerid, COLOR_RED, "You did not have any vehicles.");
-	new plate[12], vid, model, string[2048], type;
-	if(IsPlayerInRangeOfPoint(playerid, 5, 2380.5435, -1376.7015, 24.0000)) type = 1;
-	else type = 0;
+	new plate[12], vid, model, string[2048];
 	format(string, sizeof(string), "{FFFFFF}");
 	for(new i; i < rows; i++)
 	{
 		cache_get_value_name_int(i, "id", vid);
 		cache_get_value_name_int(i, "model", model);
 		cache_get_value_name(i, "licenseplate", plate, sizeof(plate));
-		if(GetVehicleType(model) != type) continue;
+		if(GetVehicleType(model) != gInfo[garageid][g_Type]) continue;
 		format(string, sizeof(string), "%sID: %d | Name: %s | Plate: %s\n", string, vid, GetVehicleName(model), plate);
 	}
 	ShowPlayerDialog(playerid, D_SHOWPLAYERVEHS, DIALOG_STYLE_LIST, "{FFFFFF}Garage", string, "{FFFFFF}Choose", "{FFFFFF}Back");
@@ -980,17 +1064,11 @@ stock GetNearestGarage(playerid)
 	return garage;
 }
 
-stock LoadGarages()
+stock IsVehicleInRangeOfPoint(vehicleid, Float:Range, Float:X, Float:Y, Float:Z)
 {
-    gInfo[0][g_SpawnX1] = 2375.8301; gInfo[0][g_SpawnY1] = -1389.0652; gInfo[0][g_SpawnZ1] = 23.6478; gInfo[0][g_SpawnR1] = 268.0640; // East Los Santos
-    new label[64];
-	for(new i; i < sizeof(gInfo); i++)
-	{
-	    format(label, sizeof(label), "Garage %d\n\nUsage: /loadcar", i);
-	    CreateDynamicPickup(19132, 20, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ]);
-		CreateDynamic3DTextLabel(label, COLOR_WHITE, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ], 15);
-	}
-	return 1;
+    new Float:VDistance = GetVehicleDistanceFromPoint(vehicleid, X, Y, Z);
+    if(VDistance <= Range) return 1;
+	return 0;
 }
 
 stock GetVehicleModelFromName(vehName[]) {
