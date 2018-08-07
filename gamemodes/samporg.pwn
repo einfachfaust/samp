@@ -49,6 +49,10 @@ enum PlayerData {
 	Float:posY,
 	Float:posZ,
 	Float:posA,
+	Float:mX,
+	Float:mY,
+	Float:mZ,
+	Float:mA,
 	FightStyle,
 	Skin,
 	LoggedIn
@@ -114,10 +118,10 @@ new gInfo[MAX_GARAGES][GarageData];
 
 new VehNames[][] =
 {
-    "Landstalker", "Bravura", "Buffalo", "Linerunner", "Perrenial", "Sentinel",
+	"Landstalker", "Bravura", "Buffalo", "Linerunner", "Perrenial", "Sentinel",
 	"Dumper", "Firetruck", "Trashmaster", "Stretch", "Manana", "Infernus",
 	"Voodoo", "Pony", "Mule", "Cheetah", "Ambulance", "Leviathan", "Moonbeam",
-    "Esperanto", "Taxi", "Washington", "Bobcat", "Whoopee", "BF Injection",
+	"Esperanto", "Taxi", "Washington", "Bobcat", "Whoopee", "BF Injection",
 	"Hunter", "Premier", "Enforcer", "Securicar", "Banshee", "Predator", "Bus",
 	"Rhino", "Barracks", "Hotknife", "Trailer", "Previon", "Coach", "Cabbie",
 	"Stallion", "Rumpo", "RC Bandit", "Romero", "Packer", "Monster", "Admiral",
@@ -135,11 +139,11 @@ new VehNames[][] =
  	"FCR-900", "NRG-500", "HPV1000", "Cement Truck", "Tow Truck", "Fortune",
  	"Cadrona", "FBI Truck", "Willard", "Forklift", "Tractor", "Combine", "Feltzer",
  	"Remington", "Slamvan", "Blade", "Freight", "Streak", "Vortex", "Vincent",
-    "Bullet", "Clover", "Sadler", "Firetruck", "Hustler", "Intruder", "Primo",
+	"Bullet", "Clover", "Sadler", "Firetruck", "Hustler", "Intruder", "Primo",
 	"Cargobob", "Tampa", "Sunrise", "Merit", "Utility", "Nevada", "Yosemite",
 	"Windsor", "Monster", "Monster", "Uranus", "Jester", "Sultan", "Stratium",
 	"Elegy", "Raindance", "RC Tiger", "Flash", "Tahoma", "Savanna", "Bandito",
-    "Freight Flat", "Streak Carriage", "Kart", "Mower", "Dune", "Sweeper",
+	"Freight Flat", "Streak Carriage", "Kart", "Mower", "Dune", "Sweeper",
 	"Broadway", "Tornado", "AT-400", "DFT-30", "Huntley", "Stafford", "BF-400",
 	"News Van", "Tug", "Trailer", "Emperor", "Wayfarer", "Euros", "Hotdog", "Club",
 	"Freight Box", "Trailer", "Andromada", "Dodo", "RC Cam", "Launch", "Police Car",
@@ -161,6 +165,7 @@ new SaveTimer[MAX_PLAYERS];
 new FirstLogin[MAX_PLAYERS];
 new Float:MarkPos[MAX_PLAYERS][4];
 new MarkSaved[MAX_PLAYERS];
+new LogIn[MAX_PLAYERS];
 enum rSp {
 	Float:spawnX,
 	Float:spawnY,
@@ -226,6 +231,10 @@ ocmd:spawn(playerid, params[]) {
 	pInfo[playerid][posY] = randomSpawn[Pos][spawnY];
 	pInfo[playerid][posZ] = randomSpawn[Pos][spawnZ];
 	pInfo[playerid][posA] = randomSpawn[Pos][spawnA];
+	pInfo[playerid][mX] = randomSpawn[Pos][spawnX];
+	pInfo[playerid][mY] = randomSpawn[Pos][spawnY];
+	pInfo[playerid][mZ] = randomSpawn[Pos][spawnZ];
+	pInfo[playerid][mA] = randomSpawn[Pos][spawnA];
 	SetPlayerFightingStyle(playerid, randomSpawn[Pos][FightStyle]);
 	pInfo[playerid][FightStyle] = randomSpawn[Pos][FightStyle];
 	new pSkin = random(6);
@@ -235,7 +244,7 @@ ocmd:spawn(playerid, params[]) {
 }
 
 ocmd:goto(playerid, params[]) {
-	new target, Float:X, Float:Y, Float:Z, Query[256];
+	new target, Float:X, Float:Y, Float:Z;
 	if(pInfo[playerid][Adminlevel] >= 1) {
 		if(sscanf(params, "u", target)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /goto <PlayerName/PlayerID>");
 		if(!IsPlayerConnected(target) || pInfo[playerid][LoggedIn] == 0) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
@@ -244,28 +253,25 @@ ocmd:goto(playerid, params[]) {
 		else SetVehiclePos(GetPlayerVehicleID(playerid), X, Y+2, Z);
 		SendFormMessage(playerid, COLOR_YELLOW, "You have teleported to the player %s.", Name[target]);
 		SendFormMessage(target, COLOR_YELLOW, "Admin %s have teleported to you.", Name[playerid]);
-		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('/goto %e', '%e', '%e', '%e')", params, Name[playerid], Name[target], currentTime(1));
-		mysql_query(handler, Query);
+		AdminLog("/goto", params, Name[playerid], Name[target], currentTime(1));
 		return 1;
 	} return NoPermission(playerid);
 }
 
 ocmd:gotopos(playerid, params[]) {
-	new target, Float:Pos[3], Query[256];
+	new Float:Pos[3];
 	if(pInfo[playerid][Adminlevel] >= 1) {
 		if(sscanf(params, "p<,>fff", Pos[0], Pos[1], Pos[2])) return SendClientMessage(playerid, COLOR_GREY, "Usage: /gotopos <X> <Y> <Z>");
-		if(!IsPlayerConnected(target) || pInfo[playerid][LoggedIn] == 0) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
 		if(!IsPlayerInAnyVehicle(playerid)) SetPlayerPos(playerid, Pos[0], Pos[1], Pos[2]);
 		else SetVehiclePos(GetPlayerVehicleID(playerid), Pos[0], Pos[1], Pos[2]);
 		SendFormMessage(playerid, COLOR_YELLOW, "You have teleported to the coordinate %0.2f %0.2f %0.2f", Pos[0], Pos[1], Pos[2]);
-		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('/gotopos %e', '%e', '%e', '%e')", params, Name[playerid], Name[target], currentTime(1));
-		mysql_query(handler, Query);
+		AdminLog("/gotopos", params, Name[playerid], "-", currentTime(1));
 		return 1;
 	} return NoPermission(playerid);
 }
 
 ocmd:gethere(playerid, params[]) {
-	new target, Float:X, Float:Y, Float:Z, Query[256];
+	new target, Float:X, Float:Y, Float:Z;
 	if(pInfo[playerid][Adminlevel] >= 1) {
 		if(sscanf(params, "u", target)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /gethere <PlayerName/PlayerID>");
 		if(!IsPlayerConnected(target) || pInfo[playerid][LoggedIn] == 0) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
@@ -274,8 +280,7 @@ ocmd:gethere(playerid, params[]) {
 		else SetVehiclePos(GetPlayerVehicleID(target), X, Y+2, Z);
 		SendFormMessage(playerid, COLOR_YELLOW, "You have teleported the player %s to you.", Name[target]);
 		SendFormMessage(target, COLOR_YELLOW, "Admin %s has teleported you to him", Name[playerid]);
-		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('/gethere %e', '%e', '%e', '%e')", params, Name[playerid], Name[target], currentTime(1));
-		mysql_query(handler, Query);
+		AdminLog("/gethere", params, Name[playerid], Name[target], currentTime(1));
 		return 1;
 	} return NoPermission(playerid);
 }
@@ -289,8 +294,7 @@ ocmd:kick(playerid, params[]) {
 		SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got kicked by %s for %s", Name[target], Name[playerid], reason);
 		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`) VALUES ('Kick', '%e', '%e', '%e', '%e')", Name[target], Name[playerid], reason, currentTime(1));
 		mysql_query(handler, Query);
-		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('/kick %e', '%e', '%e', '%e')", params, Name[playerid], Name[target], currentTime(1));
-		mysql_query(handler, Query);
+		AdminLog("/kick", params, Name[playerid], Name[target], currentTime(1));
 		SetTimerEx("KickPlayer", 50, 0, "i", playerid);
 		return 1;
 	} return NoPermission(playerid);
@@ -299,18 +303,17 @@ ocmd:kick(playerid, params[]) {
 ocmd:ban(playerid, params[]) {
 	new target, reason[45], Query[256];
 	if(pInfo[playerid][Adminlevel] >= 2) {
-	    if(sscanf(params, "us[45]", target, reason)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /ban <PlayerName/PlayerID> <Reason>");
-	    if(!IsPlayerConnected(playerid)) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
-	    if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 5) return SendClientMessage(playerid, COLOR_GREY, "You are not allowed to use this command on this player!");
-	    SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got banned by %s for %s", Name[target], Name[playerid], reason);
-	    pInfo[target][Banned] = 1;
-	    format(pInfo[target][BanReason], 45, "%s", reason);
-	    format(pInfo[target][BanDate], 20, "%s", currentTime(1));
-	    format(pInfo[target][BannedBy], MAX_PLAYER_NAME+1, "%s", Name[playerid]);
+		if(sscanf(params, "us[45]", target, reason)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /ban <PlayerName/PlayerID> <Reason>");
+		if(!IsPlayerConnected(playerid)) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
+		if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 5) return SendClientMessage(playerid, COLOR_GREY, "You are not allowed to use this command on this player!");
+		SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got banned by %s for %s", Name[target], Name[playerid], reason);
+		pInfo[target][Banned] = 1;
+		format(pInfo[target][BanReason], 45, "%s", reason);
+		format(pInfo[target][BanDate], 20, "%s", currentTime(1));
+		format(pInfo[target][BannedBy], MAX_PLAYER_NAME+1, "%s", Name[playerid]);
 		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`) VALUES ('Ban', '%e', '%e', '%e', '%e')", Name[target], Name[playerid], reason, currentTime(1));
 		mysql_query(handler, Query);
-		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('/ban %e', '%e', '%e', '%e')", params, Name[playerid], Name[target], currentTime(1));
-		mysql_query(handler, Query);
+		AdminLog("/ban", params, Name[playerid], Name[target], currentTime(1));
 		SetTimerEx("KickPlayer", 50, 0, "i", playerid);
 		return 1;
 	} return NoPermission(playerid);
@@ -342,11 +345,12 @@ ocmd:veh(playerid, params[]) {
 	GetPlayerFacingAngle(playerid, A);
 	aVehicle = CreateVehicle(sCar, X, Y, Z, A, color1, color2, -1);
 	PutPlayerInVehicle(playerid, aVehicle, 0);
+	AdminLog("/veh", params, Name[playerid], "-", currentTime(1));
 	return 1;
 }
 
 ocmd:dveh(playerid, params[]) {
-	new vehicle;
+	new vehicle, vstring[25];
 	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
 	if(sscanf(params, "d", vehicle)) {
 		if(!IsPlayerInAnyVehicle(playerid)) {
@@ -356,6 +360,8 @@ ocmd:dveh(playerid, params[]) {
 		} else {
 			DestroyVehicle(GetPlayerVehicleID(playerid));
 			SendFormMessage(playerid, COLOR_WHITE, "You have deleted the vehicle %d", GetPlayerVehicleID(playerid));
+			format(vstring, 25, "%d", GetPlayerVehicleID(playerid));
+			AdminLog("/dveh", vstring, Name[playerid], "-", currentTime(1));
 			return 1;
 		}
 	} else {
@@ -364,6 +370,7 @@ ocmd:dveh(playerid, params[]) {
 		} else {
 			DestroyVehicle(vehicle);
 			SendFormMessage(playerid, COLOR_WHITE, "You have deleted the vehicle %d", vehicle);
+			AdminLog("/dveh", params, Name[playerid], "-", currentTime(1));
 			return 1;
 		}
 	}
@@ -374,6 +381,7 @@ ocmd:fixveh(playerid) {
 	if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, COLOR_GREY, "You need to be in a vehicle!");
 	RepairVehicle(GetPlayerVehicleID(playerid));
 	SendClientMessage(playerid, COLOR_GREEN, "Your vehicle was successfully repaired!");
+	AdminLog("/fixveh", "-", Name[playerid], "-", currentTime(1));
 	return 1;
 }
 
@@ -439,6 +447,7 @@ ocmd:mark(playerid) {
 	GetPlayerPos(playerid, MarkPos[playerid][0], MarkPos[playerid][1], MarkPos[playerid][2]);
 	GetPlayerFacingAngle(playerid, MarkPos[playerid][3]);
 	MarkSaved[playerid] = 1;
+	AdminLog("/mark", "-", Name[playerid], "-", currentTime(1));
 	return SendClientMessage(playerid, COLOR_WHITE, "Position saved, teleport with /gotomark");
 }
 
@@ -447,6 +456,7 @@ ocmd:gotomark(playerid) {
 	if(!MarkSaved[playerid]) return SendClientMessage(playerid, COLOR_GREY, "You have no position saved!");
 	SetPlayerPos(playerid, MarkPos[playerid][0], MarkPos[playerid][1], MarkPos[playerid][2]);
 	SetPlayerFacingAngle(playerid, MarkPos[playerid][3]);
+	AdminLog("/gotomark", "-", Name[playerid], "-", currentTime(1));
 	return SendClientMessage(playerid, COLOR_WHITE, "You have successfully teleported to your marked position!");
 }
 
@@ -495,6 +505,8 @@ public OnPlayerConnect(playerid)
 	}
 	FirstLogin[playerid] = 0;
 	MarkSaved[playerid] = 0;
+	LogIn[playerid] = 0;
+
 	GetPlayerName(playerid, Name[playerid], MAX_PLAYER_NAME);
 	SetSpawnInfo(playerid, 0, 0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0);
 	mysql_format(handler, Query, sizeof(Query), "SELECT * FROM `Player` WHERE `Name` = '%e'", Name[playerid]);
@@ -520,17 +532,27 @@ public OnPlayerSpawn(playerid)
 		pInfo[playerid][posY] = randomSpawn[Pos][spawnY];
 		pInfo[playerid][posZ] = randomSpawn[Pos][spawnZ];
 		pInfo[playerid][posA] = randomSpawn[Pos][spawnA];
+		pInfo[playerid][mX] = randomSpawn[Pos][spawnX];
+		pInfo[playerid][mY] = randomSpawn[Pos][spawnY];
+		pInfo[playerid][mZ] = randomSpawn[Pos][spawnZ];
+		pInfo[playerid][mA] = randomSpawn[Pos][spawnA];
 		SetPlayerFightingStyle(playerid, randomSpawn[Pos][FightStyle]);
 		pInfo[playerid][FightStyle] = randomSpawn[Pos][FightStyle];
 		new pSkin = random(6)+1;
 		SetPlayerSkin(playerid, randomSkins[Pos][pSkin]);
 		pInfo[playerid][Skin] = randomSkins[Pos][pSkin];
 		FirstLogin[playerid] = 0;
+	} else if(LogIn[playerid] == 1) {
+		SetPlayerPos(playerid, pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
+		SetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
+		SetPlayerSkin(playerid, pInfo[playerid][Skin]);
+		SetPlayerFightingStyle(playerid, pInfo[playerid][FightStyle]);
+		LogIn[playerid] = 0;
 	} else {
-	    SetPlayerPos(playerid, pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
-	    SetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
-	    SetPlayerSkin(playerid, pInfo[playerid][Skin]);
-	    SetPlayerFightingStyle(playerid, pInfo[playerid][FightStyle]);
+		SetPlayerPos(playerid, pInfo[playerid][mX], pInfo[playerid][mY], pInfo[playerid][mZ]);
+		SetPlayerFacingAngle(playerid, pInfo[playerid][mA]);
+		SetPlayerSkin(playerid, pInfo[playerid][Skin]);
+		SetPlayerFightingStyle(playerid, pInfo[playerid][FightStyle]);
 	}
 	return 1;
 }
@@ -720,45 +742,45 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			mysql_tquery(handler, Query, "AccountRegister", "i", playerid);
 		}
 		case D_SHOWPLAYERVEHS: {
-		    if(!response) return 1;
-		    new dbid, trash[10], string[128], plate[15];
+			if(!response) return 1;
+			new dbid, trash[10], string[128], plate[15];
 			sscanf(inputtext, "s[4]d", trash, dbid);
 			mysql_format(handler, string, sizeof(string), "SELECT * FROM `vehicles` WHERE `id` = '%d' AND `owner` = '%d'", dbid, pInfo[playerid][id]);
 			printf("dbid: %d, owner: %d", dbid, pInfo[playerid][id]);
 			new Cache:result = mysql_query(handler, string);
 			new i;
 			for(; i < MAX_VEHICLES; i++) {
-			    if(GetVehicleModel(i) >= 400) continue;
-			    cache_get_value_name_int(0, "model", vInfo[i][v_model]);
-			    cache_get_value_name(0, "licenseplate", plate, sizeof(plate));
-			    format(vInfo[i][v_licenseplate], sizeof(plate), plate);
-			    cache_get_value_name_int(0, "kilometers", vInfo[i][v_kilometers]);
-			    cache_get_value_name_int(0, "owner", vInfo[i][v_owner]);
-			    cache_get_value_name_int(0, "tank", vInfo[i][v_tank]);
-			    cache_get_value_name_int(0, "color1", vInfo[i][v_color1]);
-			    cache_get_value_name_int(0, "color2", vInfo[i][v_color2]);
-			    cache_get_value_name_int(0, "paintjob", vInfo[i][v_paintjob]);
-			    cache_get_value_name_int(0, "spoiler", vInfo[i][v_spoiler]);
-			    cache_get_value_name_int(0, "hood", vInfo[i][v_hood]);
-			    cache_get_value_name_int(0, "roof", vInfo[i][v_roof]);
-			    cache_get_value_name_int(0, "sideskirt_left", vInfo[i][v_sideskirt_left]);
-			    cache_get_value_name_int(0, "sideskirt_right", vInfo[i][v_sideskirt_right]);
-			    cache_get_value_name_int(0, "nitro", vInfo[i][v_nitro]);
-			    cache_get_value_name_int(0, "lamps", vInfo[i][v_lamps]);
-			    cache_get_value_name_int(0, "exhaust", vInfo[i][v_exhaust]);
-			    cache_get_value_name_int(0, "wheels", vInfo[i][v_wheels]);
-			    cache_get_value_name_int(0, "stereo", vInfo[i][v_stereo]);
-			    cache_get_value_name_int(0, "hydraulics", vInfo[i][v_hydraulics]);
-			    cache_get_value_name_int(0, "bullbar", vInfo[i][v_bullbar]);
-			    cache_get_value_name_int(0, "bullbar_rear", vInfo[i][v_bullbar_rear]);
-			    cache_get_value_name_int(0, "bullbar_front", vInfo[i][v_bullbar_front]);
-			    cache_get_value_name_int(0, "sign_front", vInfo[i][v_sign_front]);
-			    cache_get_value_name_int(0, "bumper_front", vInfo[i][v_bumper_front]);
-			    cache_get_value_name_int(0, "bumper_rear", vInfo[i][v_bumper_rear]);
-			    cache_get_value_name_int(0, "bullbars", vInfo[i][v_bullbars]);
-			    cache_get_value_name_int(0, "vents", vInfo[i][v_vents]);
-			    vInfo[i][v_vehicleid] = i;
-			    break;
+				if(GetVehicleModel(i) >= 400) continue;
+				cache_get_value_name_int(0, "model", vInfo[i][v_model]);
+				cache_get_value_name(0, "licenseplate", plate, sizeof(plate));
+				format(vInfo[i][v_licenseplate], sizeof(plate), plate);
+				cache_get_value_name_int(0, "kilometers", vInfo[i][v_kilometers]);
+				cache_get_value_name_int(0, "owner", vInfo[i][v_owner]);
+				cache_get_value_name_int(0, "tank", vInfo[i][v_tank]);
+				cache_get_value_name_int(0, "color1", vInfo[i][v_color1]);
+				cache_get_value_name_int(0, "color2", vInfo[i][v_color2]);
+				cache_get_value_name_int(0, "paintjob", vInfo[i][v_paintjob]);
+				cache_get_value_name_int(0, "spoiler", vInfo[i][v_spoiler]);
+				cache_get_value_name_int(0, "hood", vInfo[i][v_hood]);
+				cache_get_value_name_int(0, "roof", vInfo[i][v_roof]);
+				cache_get_value_name_int(0, "sideskirt_left", vInfo[i][v_sideskirt_left]);
+				cache_get_value_name_int(0, "sideskirt_right", vInfo[i][v_sideskirt_right]);
+				cache_get_value_name_int(0, "nitro", vInfo[i][v_nitro]);
+				cache_get_value_name_int(0, "lamps", vInfo[i][v_lamps]);
+				cache_get_value_name_int(0, "exhaust", vInfo[i][v_exhaust]);
+				cache_get_value_name_int(0, "wheels", vInfo[i][v_wheels]);
+				cache_get_value_name_int(0, "stereo", vInfo[i][v_stereo]);
+				cache_get_value_name_int(0, "hydraulics", vInfo[i][v_hydraulics]);
+				cache_get_value_name_int(0, "bullbar", vInfo[i][v_bullbar]);
+				cache_get_value_name_int(0, "bullbar_rear", vInfo[i][v_bullbar_rear]);
+				cache_get_value_name_int(0, "bullbar_front", vInfo[i][v_bullbar_front]);
+				cache_get_value_name_int(0, "sign_front", vInfo[i][v_sign_front]);
+				cache_get_value_name_int(0, "bumper_front", vInfo[i][v_bumper_front]);
+				cache_get_value_name_int(0, "bumper_rear", vInfo[i][v_bumper_rear]);
+				cache_get_value_name_int(0, "bullbars", vInfo[i][v_bullbars]);
+				cache_get_value_name_int(0, "vents", vInfo[i][v_vents]);
+				vInfo[i][v_vehicleid] = i;
+				break;
 			}
 
 			new gID = GetNearestGarage(playerid);
@@ -854,9 +876,14 @@ public AccountLogin(playerid) {
 		cache_get_value_name_float(0, "posY", pInfo[playerid][posY]);
 		cache_get_value_name_float(0, "posZ", pInfo[playerid][posZ]);
 		cache_get_value_name_float(0, "posA", pInfo[playerid][posA]);
+		cache_get_value_name_float(0, "mX", pInfo[playerid][mX]);
+		cache_get_value_name_float(0, "mY", pInfo[playerid][mY]);
+		cache_get_value_name_float(0, "mZ", pInfo[playerid][mZ]);
+		cache_get_value_name_float(0, "mA", pInfo[playerid][mA]);
 		cache_get_value_name_int(0, "FightStyle", pInfo[playerid][FightStyle]);
 		cache_get_value_name_int(0, "Skin", pInfo[playerid][Skin]);
 		pInfo[playerid][LoggedIn] = 1;
+		LogIn[playerid] = 1;
 		SaveTimer[playerid] = SetTimerEx("SaveAccount", 300000, 1, "i", playerid);
 		SpawnPlayer(playerid);
 	} else {
@@ -893,10 +920,8 @@ public SaveAccount(playerid) {
 		GetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
 		mysql_format(handler, string, sizeof(string), "UPDATE `Player` SET `Adminlevel` = '%d', `Money` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e', \n", pInfo[playerid][Adminlevel], pInfo[playerid][Money], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
 		strcat(Query, string);
-		string[0] = '\0';
-		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `FightStyle` = '%d' WHERE `id` = '%d'", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ], pInfo[playerid][posA], pInfo[playerid][FightStyle], pInfo[playerid][id]);
+		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `mX` = '%.5f', `mY` = '%.5f', `mZ` = '%.5f', `mA` = '%.5f', `FightStyle` = '%d' WHERE `id` = '%d'", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ], pInfo[playerid][posA], pInfo[playerid][mX], pInfo[playerid][mY], pInfo[playerid][mZ], pInfo[playerid][mA], pInfo[playerid][FightStyle], pInfo[playerid][id]);
 		strcat(Query, string);
-		string[0] = '\0';
 		mysql_query(handler, Query);
 	} return 1;
 }
@@ -926,8 +951,7 @@ stock currentTime(type = 1) {
 	} return cTime;
 }
 
-public ShowPlayerVehicles(playerid)
-{
+public ShowPlayerVehicles(playerid) {
 	new rows;
 	cache_get_row_count(rows);
 	if(!rows) return SendClientMessage(playerid, COLOR_RED, "You did not have any vehicles.");
@@ -935,8 +959,7 @@ public ShowPlayerVehicles(playerid)
 	if(IsPlayerInRangeOfPoint(playerid, 5, 2380.5435, -1376.7015, 24.0000)) type = 1;
 	else type = 0;
 	format(string, sizeof(string), "{FFFFFF}");
-	for(new i; i < rows; i++)
-	{
+	for(new i; i < rows; i++)	{
 		cache_get_value_name_int(i, "id", vid);
 		cache_get_value_name_int(i, "model", model);
 		cache_get_value_name(i, "licenseplate", plate, sizeof(plate));
@@ -947,50 +970,40 @@ public ShowPlayerVehicles(playerid)
 	return 1;
 }
 
-stock GetVehicleType(modelid)
-{
-	switch(modelid)
-	{
-		case 417,425,447,469,487,488,497,548,563: { return 2; }     		// 	Helicopters
-		case 441,464,465,501,564,594: { return 3; }                 		//	RC Vehicles
-		case 430,446,452..454,472,473,484,493,495: { return 4; }    		//  Boats
-		case 435,450,584,591,606..608,610,611: { return 5; }    			// 	Trailers
-		case 460,476,511..513,519,520,553,577,592,593: { return 6; }        //  Airplanes
-		case 537,538,569,570,590,449: { return 7; }                         //  Trains
+stock GetVehicleType(modelid) {
+	switch(modelid)	{
+		case 417,425,447,469,487,488,497,548,563: { return 2; }				// 	Helicopters
+		case 441,464,465,501,564,594: { return 3; }										//	RC Vehicles
+		case 430,446,452..454,472,473,484,493,495: { return 4; }	 		//	Boats
+		case 435,450,584,591,606..608,610,611: { return 5; }	 				// 	Trailers
+		case 460,476,511..513,519,520,553,577,592,593: { return 6; }	//	Airplanes
+		case 537,538,569,570,590,449: { return 7; }								 		//	Trains
 		default: { return 1; }
-	}
-	return 0;
+	}	return 0;
 }
 
-stock GetVehicleName(modelid)
-{
+stock GetVehicleName(modelid) {
 	new vname[30];
 	format(vname, sizeof(vname), "%s", VehNames[modelid - 400]);
 	return vname;
 }
 
-stock GetNearestGarage(playerid)
-{
+stock GetNearestGarage(playerid) {
 	new garage, Float:distance1, Float:distance2 = 10000000, i;
-	for(; i < sizeof(gInfo); i++)
-	{
+	for(; i < sizeof(gInfo); i++)	{
 		distance1 = GetPlayerDistanceFromPoint(playerid, gInfo[i][g_SpawnX1], gInfo[i][g_SpawnY1], gInfo[i][g_SpawnZ1]);
 		if(distance1 < distance2) distance2 = distance1, garage = i;
-	}
-	return garage;
+	}	return garage;
 }
 
-stock LoadGarages()
-{
-    gInfo[0][g_SpawnX1] = 2375.8301; gInfo[0][g_SpawnY1] = -1389.0652; gInfo[0][g_SpawnZ1] = 23.6478; gInfo[0][g_SpawnR1] = 268.0640; // East Los Santos
-    new label[64];
-	for(new i; i < sizeof(gInfo); i++)
-	{
-	    format(label, sizeof(label), "Garage %d\n\nUsage: /loadcar", i);
-	    CreateDynamicPickup(19132, 20, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ]);
+stock LoadGarages() {
+	gInfo[0][g_SpawnX1] = 2375.8301; gInfo[0][g_SpawnY1] = -1389.0652; gInfo[0][g_SpawnZ1] = 23.6478; gInfo[0][g_SpawnR1] = 268.0640; // East Los Santos
+	new label[64];
+	for(new i; i < sizeof(gInfo); i++) {
+		format(label, sizeof(label), "Garage %d\n\nUsage: /loadcar", i);
+		CreateDynamicPickup(19132, 20, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ]);
 		CreateDynamic3DTextLabel(label, COLOR_WHITE, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ], 15);
-	}
-	return 1;
+	}	return 1;
 }
 
 stock GetVehicleModelFromName(vehName[]) {
@@ -1001,8 +1014,15 @@ stock GetVehicleModelFromName(vehName[]) {
 }
 
 stock IsNumeric(string[]) {
-	for (new i = 0, j = strlen(string); i < j; i++)
-	{
+	for (new i = 0, j = strlen(string); i < j; i++)	{
 		if(string[i] > '9' || string[i] < '0') return 0;
 	} return 1;
+}
+
+stock AdminLog(command[], parameters[] = '-', name[], target[] = '-', time[]) {
+	new Query[256];
+	if(!strcmp(parameters, "'-'")) mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('%e', '%e', '%e', '%e')", command, name, target, time);
+	else mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('%e %e', '%e', '%e', '%e')", command, parameters, name, target, time);
+	mysql_query(handler, Query);
+	return 1;
 }
