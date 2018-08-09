@@ -210,14 +210,15 @@ new TravelPos[][TravelData] = {
 	{2, 825.0736, -1353.6986, 13.5369, 817.8281, -1341.7056, 13.5263, 88.3601, "Los Santos Metro"}, // Los Santos Metro
 	{3, -1975.3186, -569.3350, 25.6802, -1969.3849, -568.9618, 25.2988, 277.5843, "San Fierro Foster Valley"}, // San Fierro Foster Valley
 	{4, -1973.9847, 117.5540, 27.6875, -1972.8093, 137.6855, 27.6875, 88.4312, "San Fierro Train Station"}, // San Fierro Train Station
-	{5, 571.1689, 1217.9426, 11.7905, 560.6390, 1217.8099, 11.7188, 233.5452, "Las Venturas Octane Spring"}, // Las Venturas Octane Spring
-	{6, 730.0837, 1932.4736, 5.5391, 731.0877, 1940.3416, 5.5391, 104.5995, "Las Venturas Spread Ranch"}, // Las Venturas Spread Ranch
-	{7, 1436.2892, 2656.8005, 11.3926, 1432.7573, 2648.8611, 11.3926, 1.9973, "Las Venturas Train Station"}, // Las Venturas Train Station
-	{8, 2379.0972, 2700.7095, 10.8081, 2396.5408, 2703.7183, 10.8203, 296.6951, "Las Venturas Spiny Bed"}, // Las Venturas Spiny Bed
-	{9, 2778.3882, 1732.4832, 11.3926, 2778.4707, 1751.4727, 11.3926, 110.5209, "Las Venturas Sobell"}, // Las Venturas Sobell
-	{10, 2857.7542, 1314.5885, 11.3906, 2852.4817, 1290.8641, 11.3906, 88.9240, "Las Venturas Linden"}, // Las Venturas Linden
-	{11, 2295.1128, -1158.7957, 26.6275, 2295.1223, -1169.9501, 26.2464, 191.1737, "East Los Santos"}, // East Los Santos
-	{12, 2218.1255, -1657.0381, 15.1890, 2215.0603, -1667.7705, 14.7600, 257.2626, "Los Santos Idlewood"} // Los Santos Idlewood
+	{5, -1688.8149, -17.1884, 3.5547, -1685.8719, -14.6223, 3.5547, 118.7823, "San Fierro Easter Basin"},
+	{6, 571.1689, 1217.9426, 11.7905, 560.6390, 1217.8099, 11.7188, 233.5452, "Las Venturas Octane Spring"}, // Las Venturas Octane Spring
+	{7, 730.0837, 1932.4736, 5.5391, 731.0877, 1940.3416, 5.5391, 104.5995, "Las Venturas Spread Ranch"}, // Las Venturas Spread Ranch
+	{8, 1436.2892, 2656.8005, 11.3926, 1432.7573, 2648.8611, 11.3926, 1.9973, "Las Venturas Train Station"}, // Las Venturas Train Station
+	{9, 2379.0972, 2700.7095, 10.8081, 2396.5408, 2703.7183, 10.8203, 296.6951, "Las Venturas Spiny Bed"}, // Las Venturas Spiny Bed
+	{10, 2778.3882, 1732.4832, 11.3926, 2778.4707, 1751.4727, 11.3926, 110.5209, "Las Venturas Sobell"}, // Las Venturas Sobell
+	{11, 2857.7542, 1314.5885, 11.3906, 2852.4817, 1290.8641, 11.3906, 88.9240, "Las Venturas Linden"}, // Las Venturas Linden
+	{12, 2295.1128, -1158.7957, 26.6275, 2295.1223, -1169.9501, 26.2464, 191.1737, "East Los Santos"}, // East Los Santos
+	{13, 2218.1255, -1657.0381, 15.1890, 2215.0603, -1667.7705, 14.7600, 257.2626, "Los Santos Idlewood"} // Los Santos Idlewood
 };
 
 main() {
@@ -402,51 +403,55 @@ ocmd:travel(playerid) {
 	for(new i = 0; i < sizeof(TravelPos); i++) {
 		if(IsPlayerInRangeOfPoint(playerid, 3.0, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ])) {
 			if(i == 0) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spinybed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spinybed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 1) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 2) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 3) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
-			} else if(i == 4) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station", "Travel", "Cancel");
+			}  else if(i == 4) {
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 5) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 6) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 7) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 8) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 9) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "East Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 10) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "East Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 11) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden", "Travel", "Cancel");
+				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+				return 1;
+			} else if(i == 12) {
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			}
@@ -521,6 +526,9 @@ public OnPlayerConnect(playerid)
 	new Query[128];
 	if(!IsPlayerNPC(playerid)) {
 		for(new i; PlayerData:i < PlayerData; i++) pInfo[playerid][PlayerData:i] = 0;
+	}
+	for(new i = 0; i < sizeof(TravelPos); i++) {
+		SetPlayerMapIcon(playerid, i, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 42, 0, MAPICON_LOCAL);
 	}
 	FirstLogin[playerid] = 0;
 	MarkSaved[playerid] = 0;
@@ -851,7 +859,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(!response) return 1;
 			if(GetPlayerMoney(playerid) < 45) return SendClientMessage(playerid, COLOR_GREY, "You don't have enough money to travel!");
 			new travelID = listitem+GetPVarInt(playerid, "Travel");
-			if(travelID > 11) travelID = (travelID -11)-1;
+			if(travelID > 12) travelID = (travelID -12)-1;
 			SetPlayerPos(playerid, TravelPos[travelID][tDX], TravelPos[travelID][tDY], TravelPos[travelID][tDZ]);
 			SetPlayerFacingAngle(playerid, TravelPos[travelID][tDA]);
 			SendFormMessage(playerid, COLOR_YELLOW, "You have traveled to %s and had to pay $45.", TravelPos[travelID][tsName]);
