@@ -5,8 +5,8 @@
 #include <sscanf2>
 
 #define M_HOST "127.0.0.1"
-#define M_USER "root"
-#define M_PASS ""
+#define M_USER "samporg"
+#define M_PASS "W07oDGtwFkDt3o16"
 #define M_DATA "samporg"
 
 new txtstr[145];
@@ -50,10 +50,7 @@ enum PlayerData {
 	Float:posY,
 	Float:posZ,
 	Float:posA,
-	Float:mX,
-	Float:mY,
-	Float:mZ,
-	Float:mA,
+	fsID,
 	FightStyle,
 	Skin,
 	LoggedIn
@@ -174,6 +171,7 @@ new Float:MarkPos[MAX_PLAYERS][4];
 new MarkSaved[MAX_PLAYERS];
 new LogIn[MAX_PLAYERS];
 enum rSp {
+	rsID,
 	Float:spawnX,
 	Float:spawnY,
 	Float:spawnZ,
@@ -181,12 +179,12 @@ enum rSp {
 	FightStyle
 };
 new randomSpawn[][rSp] = {
-	{2621.1633, 212.5138, 59.0695, 319.4377, FIGHT_STYLE_GRABKICK}, // HankyPanky
-	{2478.5625, -1245.8259, 28.7706, 183.5509, FIGHT_STYLE_BOXING}, // EastLS
-	{1955.5347, 691.5303, 10.8203, 89.1271, FIGHT_STYLE_NORMAL}, // RockShore West
-	{-761.4552, 1615.0485, 27.1172, 356.1084, FIGHT_STYLE_ELBOW}, // Las Barrancas
-	{-2080.5703, -2546.9583, 30.6250, 298.0318, FIGHT_STYLE_KNEEHEAD}, // AngelPine
-	{-2240.5330, 577.3491, 35.1719, 182.1359, FIGHT_STYLE_KUNGFU} // Chinatown
+	{1, 2621.1633, 212.5138, 59.0695, 319.4377, FIGHT_STYLE_GRABKICK}, // HankyPanky
+	{2, 2478.5625, -1245.8259, 28.7706, 183.5509, FIGHT_STYLE_BOXING}, // EastLS
+	{3, 1955.5347, 691.5303, 10.8203, 89.1271, FIGHT_STYLE_NORMAL}, // RockShore West
+	{4, -761.4552, 1615.0485, 27.1172, 356.1084, FIGHT_STYLE_ELBOW}, // Las Barrancas
+	{5, -2080.5703, -2546.9583, 30.6250, 298.0318, FIGHT_STYLE_KNEEHEAD}, // AngelPine
+	{6, -2240.5330, 577.3491, 35.1719, 182.1359, FIGHT_STYLE_KUNGFU} // Chinatown
 };
 new randomSkins[][6] = {
 	{73, 78, 134, 135, 77, 197}, // HankyPanky
@@ -204,21 +202,22 @@ enum TravelData {
 	Float:tDX,
 	Float:tDY,
 	Float:tDZ,
-	Float:tDA
+	Float:tDA,
+	tsName[30]
 }
 new TravelPos[][TravelData] = {
-	{1, 1757.1107, -1944.0425, 13.5681, 1763.9489, -1943.1060, 13.5635, 314.7150}, // Los Santos Train Station
-	{2, 825.0736, -1353.6986, 13.5369, 817.8281, -1341.7056, 13.5263, 88.3601}, // Los Santos Metro
-	{3, -1975.3186, -569.3350, 25.6802, -1969.3849, -568.9618, 25.2988, 277.5843}, // San Fierro Foster Valley
-	{4, -1973.9847, 117.5540, 27.6875, -1972.8093, 137.6855, 27.6875, 88.4312}, // San Fierro Train Station
-	{5, 571.1689, 1217.9426, 11.7905, 560.6390, 1217.8099, 11.7188, 233.5452}, // Las Venturas Octane Spring
-	{6, 730.0837, 1932.4736, 5.5391, 731.0877, 1940.3416, 5.5391, 104.5995}, // Las Venturas Spread Ranch
-	{7, 1436.2892, 2656.8005, 11.3926, 1432.7573, 2648.8611, 11.3926, 1.9973}, // Las Venturas Train Station
-	{8, 2379.0972, 2700.7095, 10.8081, 2396.5408, 2703.7183, 10.8203, 296.6951}, // Las Venturas Spiny Bed
-	{9, 2778.3882, 1732.4832, 11.3926, 2778.4707, 1751.4727, 11.3926, 110.5209}, // Las Ventural Sobell
-	{10, 2857.7542, 1314.5885, 11.3906, 2852.4817, 1290.8641, 11.3906, 88.9240}, // Las Ventural Linden
-	{11, 2295.1128, -1158.7957, 26.6275, 2295.1223, -1169.9501, 26.2464, 191.1737}, // East Los Santos
-	{12, 2218.1255, -1657.0381, 15.1890, 2215.0603, -1667.7705, 14.7600, 257.2626} // Los Santos Idlewood
+	{1, 1757.1107, -1944.0425, 13.5681, 1763.9489, -1943.1060, 13.5635, 314.7150, "Los Santos Train Station"}, // Los Santos Train Station
+	{2, 825.0736, -1353.6986, 13.5369, 817.8281, -1341.7056, 13.5263, 88.3601, "Los Santos Metro"}, // Los Santos Metro
+	{3, -1975.3186, -569.3350, 25.6802, -1969.3849, -568.9618, 25.2988, 277.5843, "San Fierro Foster Valley"}, // San Fierro Foster Valley
+	{4, -1973.9847, 117.5540, 27.6875, -1972.8093, 137.6855, 27.6875, 88.4312, "San Fierro Train Station"}, // San Fierro Train Station
+	{5, 571.1689, 1217.9426, 11.7905, 560.6390, 1217.8099, 11.7188, 233.5452, "Las Venturas Octane Spring"}, // Las Venturas Octane Spring
+	{6, 730.0837, 1932.4736, 5.5391, 731.0877, 1940.3416, 5.5391, 104.5995, "Las Venturas Spread Ranch"}, // Las Venturas Spread Ranch
+	{7, 1436.2892, 2656.8005, 11.3926, 1432.7573, 2648.8611, 11.3926, 1.9973, "Las Venturas Train Station"}, // Las Venturas Train Station
+	{8, 2379.0972, 2700.7095, 10.8081, 2396.5408, 2703.7183, 10.8203, 296.6951, "Las Venturas Spiny Bed"}, // Las Venturas Spiny Bed
+	{9, 2778.3882, 1732.4832, 11.3926, 2778.4707, 1751.4727, 11.3926, 110.5209, "Las Venturas Sobell"}, // Las Venturas Sobell
+	{10, 2857.7542, 1314.5885, 11.3906, 2852.4817, 1290.8641, 11.3906, 88.9240, "Las Venturas Linden"}, // Las Venturas Linden
+	{11, 2295.1128, -1158.7957, 26.6275, 2295.1223, -1169.9501, 26.2464, 191.1737, "East Los Santos"}, // East Los Santos
+	{12, 2218.1255, -1657.0381, 15.1890, 2215.0603, -1667.7705, 14.7600, 257.2626, "Los Santos Idlewood"} // Los Santos Idlewood
 };
 
 main() {
@@ -238,15 +237,16 @@ ocmd:spawn(playerid, params[]) {
 	pInfo[playerid][posY] = randomSpawn[Pos][spawnY];
 	pInfo[playerid][posZ] = randomSpawn[Pos][spawnZ];
 	pInfo[playerid][posA] = randomSpawn[Pos][spawnA];
-	pInfo[playerid][mX] = randomSpawn[Pos][spawnX];
-	pInfo[playerid][mY] = randomSpawn[Pos][spawnY];
-	pInfo[playerid][mZ] = randomSpawn[Pos][spawnZ];
-	pInfo[playerid][mA] = randomSpawn[Pos][spawnA];
+	pInfo[playerid][fsID] = randomSpawn[Pos][rsID];
 	SetPlayerFightingStyle(playerid, randomSpawn[Pos][FightStyle]);
 	pInfo[playerid][FightStyle] = randomSpawn[Pos][FightStyle];
 	new pSkin = random(6);
 	SetPlayerSkin(playerid, randomSkins[Pos][pSkin]);
 	pInfo[playerid][Skin] = randomSkins[Pos][pSkin];
+	return 1;
+}
+
+ocmd:respawn(playerid, params[]) {
 	return 1;
 }
 
@@ -406,47 +406,47 @@ ocmd:travel(playerid) {
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 1) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 2) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 3) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 4) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 5) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 6) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 7) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Ventural Sobell\nLas Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 8) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Ventural Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 9) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "East Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "East Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 10) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			} else if(i == 11) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Ventural Train Station\nLas Ventural Spiny Bed\nLas Ventural Sobell\nLas Ventural Linden\nEast Los Santos", "Travel", "Cancel");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos", "Travel", "Cancel");
 				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 				return 1;
 			}
@@ -492,7 +492,7 @@ public OnGameModeInit()
 
 	for(new i = 0; i < sizeof(TravelPos); i++) {
 		CreateDynamicPickup(1239, 1, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ]);
-		CreateDynamic3DTextLabel("{9A2D25}Train Station{EEEE00}\n\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
+		CreateDynamic3DTextLabel("{9A2D25}Train Station{EEEE00}\nTicket price: $45\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
 	}
 
 	// ----- Disables/Settings -----
@@ -551,10 +551,7 @@ public OnPlayerSpawn(playerid)
 		pInfo[playerid][posY] = randomSpawn[Pos][spawnY];
 		pInfo[playerid][posZ] = randomSpawn[Pos][spawnZ];
 		pInfo[playerid][posA] = randomSpawn[Pos][spawnA];
-		pInfo[playerid][mX] = randomSpawn[Pos][spawnX];
-		pInfo[playerid][mY] = randomSpawn[Pos][spawnY];
-		pInfo[playerid][mZ] = randomSpawn[Pos][spawnZ];
-		pInfo[playerid][mA] = randomSpawn[Pos][spawnA];
+		pInfo[playerid][fsID] = randomSpawn[Pos][rsID];
 		SetPlayerFightingStyle(playerid, randomSpawn[Pos][FightStyle]);
 		pInfo[playerid][FightStyle] = randomSpawn[Pos][FightStyle];
 		new pSkin = random(6)+1;
@@ -568,8 +565,12 @@ public OnPlayerSpawn(playerid)
 		SetPlayerFightingStyle(playerid, pInfo[playerid][FightStyle]);
 		LogIn[playerid] = 0;
 	} else {
-		SetPlayerPos(playerid, pInfo[playerid][mX], pInfo[playerid][mY], pInfo[playerid][mZ]);
-		SetPlayerFacingAngle(playerid, pInfo[playerid][mA]);
+		for(new i = 0; i < sizeof(randomSpawn); i++) {
+			if(randomSpawn[i][rsID] == pInfo[playerid][fsID]) {
+				SetPlayerPos(playerid, randomSpawn[i][spawnX], randomSpawn[i][spawnY], randomSpawn[i][spawnZ]);
+				SetPlayerFacingAngle(playerid, randomSpawn[i][spawnA]);
+			}
+		}
 		SetPlayerSkin(playerid, pInfo[playerid][Skin]);
 		SetPlayerFightingStyle(playerid, pInfo[playerid][FightStyle]);
 	}
@@ -853,6 +854,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(travelID > 11) travelID = (travelID -11)-1;
 			SetPlayerPos(playerid, TravelPos[travelID][tDX], TravelPos[travelID][tDY], TravelPos[travelID][tDZ]);
 			SetPlayerFacingAngle(playerid, TravelPos[travelID][tDA]);
+			SendFormMessage(playerid, COLOR_YELLOW, "You have traveled to %s and had to pay $45.", TravelPos[travelID][tsName]);
 			GivePlayerMoney(playerid, -45);
 			DeletePVar(playerid, "Travel");
 			return 1;
@@ -865,7 +867,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			mysql_pquery(handler, "SELECT * FROM `garages`", "LoadGarages");
 			SendClientMessage(playerid, COLOR_RED, "Garages have been reloaded successfully.");
-		    return 1;
+			AdminLog("/reload", "Garages", Name[playerid], "-", currentTime(1));
+			return 1;
 		}
 	}
 	return 1;
@@ -914,10 +917,7 @@ public AccountLogin(playerid) {
 		cache_get_value_name_float(0, "posY", pInfo[playerid][posY]);
 		cache_get_value_name_float(0, "posZ", pInfo[playerid][posZ]);
 		cache_get_value_name_float(0, "posA", pInfo[playerid][posA]);
-		cache_get_value_name_float(0, "mX", pInfo[playerid][mX]);
-		cache_get_value_name_float(0, "mY", pInfo[playerid][mY]);
-		cache_get_value_name_float(0, "mZ", pInfo[playerid][mZ]);
-		cache_get_value_name_float(0, "mA", pInfo[playerid][mA]);
+		cache_get_value_name_int(0, "fsID", pInfo[playerid][fsID]);
 		cache_get_value_name_int(0, "FightStyle", pInfo[playerid][FightStyle]);
 		cache_get_value_name_int(0, "Skin", pInfo[playerid][Skin]);
 		pInfo[playerid][LoggedIn] = 1;
@@ -958,7 +958,7 @@ public SaveAccount(playerid) {
 		GetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
 		mysql_format(handler, string, sizeof(string), "UPDATE `Player` SET `Adminlevel` = '%d', `Money` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e', \n", pInfo[playerid][Adminlevel], pInfo[playerid][Money], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
 		strcat(Query, string);
-		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `mX` = '%.5f', `mY` = '%.5f', `mZ` = '%.5f', `mA` = '%.5f', `FightStyle` = '%d' WHERE `id` = '%d'", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ], pInfo[playerid][posA], pInfo[playerid][mX], pInfo[playerid][mY], pInfo[playerid][mZ], pInfo[playerid][mA], pInfo[playerid][FightStyle], pInfo[playerid][id]);
+		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `fsID` = '%d', `FightStyle` = '%d' WHERE `id` = '%d'", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ], pInfo[playerid][posA], pInfo[playerid][fsID], pInfo[playerid][FightStyle], pInfo[playerid][id]);
 		strcat(Query, string);
 		mysql_query(handler, Query);
 	} return 1;
