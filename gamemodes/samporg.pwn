@@ -361,7 +361,7 @@ ocmd:veh(playerid, params[]) {
 	return 1;
 }
 
-ocmd:dveh(playerid, params[]) {
+ocmd@2:dveh,delveh(playerid, params[]) {
 	new vehicle, vstring[25];
 	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
 	if(sscanf(params, "d", vehicle)) {
