@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Erstellungszeit: 09. Aug 2018 um 13:26
+-- Erstellungszeit: 10. Aug 2018 um 23:31
 -- Server-Version: 10.2.16-MariaDB-10.2.16+maria~jessie-log
 -- PHP-Version: 5.6.37-1+0~20180725093903.2+jessie~1.gbp606419
 
@@ -34,6 +34,37 @@ CREATE TABLE `AdminLog` (
   `Admin` varchar(255) NOT NULL,
   `Target` varchar(255) NOT NULL,
   `Time` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Tabellenstruktur für Tabelle `Garages`
+--
+
+CREATE TABLE `Garages` (
+  `id` int(255) NOT NULL,
+  `GarageX` float(255,5) NOT NULL,
+  `GarageY` float(255,5) NOT NULL,
+  `GarageZ` float(255,5) NOT NULL,
+  `SpawnX1` float(255,5) NOT NULL,
+  `SpawnY1` float(255,5) NOT NULL,
+  `SpawnZ1` float(255,5) NOT NULL,
+  `SpawnA1` float(255,5) NOT NULL,
+  `SpawnX2` float(255,5) NOT NULL,
+  `SpawnY2` float(255,5) NOT NULL,
+  `SpawnZ2` float(255,5) NOT NULL,
+  `SpawnA2` float(255,5) NOT NULL,
+  `SpawnX3` float(255,5) NOT NULL,
+  `SpawnY3` float(255,5) NOT NULL,
+  `SpawnZ3` float(255,5) NOT NULL,
+  `SpawnA3` float(255,5) NOT NULL,
+  `SpawnX4` float(255,5) NOT NULL,
+  `SpawnY4` float(255,5) NOT NULL,
+  `SpawnZ4` float(255,5) NOT NULL,
+  `SpawnA4` float(255,5) NOT NULL,
+  `Type` int(255) NOT NULL,
+  `Name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -125,6 +156,12 @@ ALTER TABLE `AdminLog`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indizes für die Tabelle `Garages`
+--
+ALTER TABLE `Garages`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indizes für die Tabelle `Player`
 --
 ALTER TABLE `Player`
@@ -150,6 +187,12 @@ ALTER TABLE `Vehicles`
 -- AUTO_INCREMENT für Tabelle `AdminLog`
 --
 ALTER TABLE `AdminLog`
+  MODIFY `id` int(255) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT für Tabelle `Garages`
+--
+ALTER TABLE `Garages`
   MODIFY `id` int(255) NOT NULL AUTO_INCREMENT;
 
 --

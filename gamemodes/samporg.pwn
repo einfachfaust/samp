@@ -27,6 +27,8 @@ new txtstr[145];
 #undef MAX_VEHICLES
 #define MAX_VEHICLES 500
 #define MAX_GARAGES 100
+#undef MAX_PLAYERS
+#define MAX_PLAYERS 50
 // -------------------
 
 // ----- Dialoge -----
@@ -203,22 +205,59 @@ enum TravelData {
 	Float:tDY,
 	Float:tDZ,
 	Float:tDA,
-	tsName[30]
+	tsName[35],
+	Type
 }
 new TravelPos[][TravelData] = {
-	{1, 1757.1107, -1944.0425, 13.5681, 1763.9489, -1943.1060, 13.5635, 314.7150, "Los Santos Train Station"}, // Los Santos Train Station
-	{2, 825.0736, -1353.6986, 13.5369, 817.8281, -1341.7056, 13.5263, 88.3601, "Los Santos Metro"}, // Los Santos Metro
-	{3, -1975.3186, -569.3350, 25.6802, -1969.3849, -568.9618, 25.2988, 277.5843, "San Fierro Foster Valley"}, // San Fierro Foster Valley
-	{4, -1973.9847, 117.5540, 27.6875, -1972.8093, 137.6855, 27.6875, 88.4312, "San Fierro Train Station"}, // San Fierro Train Station
-	{5, -1688.8149, -17.1884, 3.5547, -1685.8719, -14.6223, 3.5547, 118.7823, "San Fierro Easter Basin"},
-	{6, 571.1689, 1217.9426, 11.7905, 560.6390, 1217.8099, 11.7188, 233.5452, "Las Venturas Octane Spring"}, // Las Venturas Octane Spring
-	{7, 730.0837, 1932.4736, 5.5391, 731.0877, 1940.3416, 5.5391, 104.5995, "Las Venturas Spread Ranch"}, // Las Venturas Spread Ranch
-	{8, 1436.2892, 2656.8005, 11.3926, 1432.7573, 2648.8611, 11.3926, 1.9973, "Las Venturas Train Station"}, // Las Venturas Train Station
-	{9, 2379.0972, 2700.7095, 10.8081, 2396.5408, 2703.7183, 10.8203, 296.6951, "Las Venturas Spiny Bed"}, // Las Venturas Spiny Bed
-	{10, 2778.3882, 1732.4832, 11.3926, 2778.4707, 1751.4727, 11.3926, 110.5209, "Las Venturas Sobell"}, // Las Venturas Sobell
-	{11, 2857.7542, 1314.5885, 11.3906, 2852.4817, 1290.8641, 11.3906, 88.9240, "Las Venturas Linden"}, // Las Venturas Linden
-	{12, 2295.1128, -1158.7957, 26.6275, 2295.1223, -1169.9501, 26.2464, 191.1737, "East Los Santos"}, // East Los Santos
-	{13, 2218.1255, -1657.0381, 15.1890, 2215.0603, -1667.7705, 14.7600, 257.2626, "Los Santos Idlewood"} // Los Santos Idlewood
+	/* Train Travel */
+	{1, 1757.1107, -1944.0425, 13.5681, 1763.9489, -1943.1060, 13.5635, 314.7150, "Los Santos Train Station", 1},
+	{2, 825.0736, -1353.6986, 13.5369, 817.8281, -1341.7056, 13.5263, 88.3601, "Los Santos Metro", 1},
+	{3, -1975.3186, -569.3350, 25.6802, -1969.3849, -568.9618, 25.2988, 277.5843, "San Fierro Foster Valley", 1},
+	{4, -1973.9847, 117.5540, 27.6875, -1972.8093, 137.6855, 27.6875, 88.4312, "San Fierro Train Station", 1},
+	{5, -1688.8149, -17.1884, 3.5547, -1685.8719, -14.6223, 3.5547, 118.7823, "San Fierro Easter Basin", 1},
+	{6, 571.1689, 1217.9426, 11.7905, 560.6390, 1217.8099, 11.7188, 233.5452, "Las Venturas Octane Spring", 1},
+	{7, 730.0837, 1932.4736, 5.5391, 731.0877, 1940.3416, 5.5391, 104.5995, "Las Venturas Spread Ranch", 1},
+	{8, 1436.2892, 2656.8005, 11.3926, 1432.7573, 2648.8611, 11.3926, 1.9973, "Las Venturas Train Station", 1},
+	{9, 2379.0972, 2700.7095, 10.8081, 2396.5408, 2703.7183, 10.8203, 296.6951, "Las Venturas Spiny Bed", 1},
+	{10, 2778.3882, 1732.4832, 11.3926, 2778.4707, 1751.4727, 11.3926, 110.5209, "Las Venturas Sobell", 1},
+	{11, 2857.7542, 1314.5885, 11.3906, 2852.4817, 1290.8641, 11.3906, 88.9240, "Las Venturas Linden", 1},
+	{12, 2295.1128, -1158.7957, 26.6275, 2295.1223, -1169.9501, 26.2464, 191.1737, "East Los Santos", 1},
+	{13, 2218.1255, -1657.0381, 15.1890, 2215.0603, -1667.7705, 14.7600, 257.2626, "Los Santos Idlewood", 1},
+
+	/* Boat Travel */
+	{14, -2941.9460, 483.6489, 4.9103, -2947.6912, 492.8041, 2.4273, 183.5086, "San Fierro Ocean Flats", 2},
+	{15, -2654.7236, 1487.6765, 7.1875, -2649.4011, 1480.3859, 7.1875, 46.8547, "San Fierro Battery Point", 2},
+	{16, -2333.4551, 2329.5090, 4.9844, -2329.0029, 2317.4524, 3.5000, 14.5239, "Bayside", 2},
+	{17, -1920.4556, 1391.9714, 7.1807, -1927.7982, 1392.1709, 7.1806, 270.8113, "San Fierro Esplanade North", 2},
+	{18, -1484.9578, 718.0222, 7.1784, -1485.2469, 724.1362, 7.1786, 191.6976, "San Fierro Graver Bridge", 2},
+	{19, -1629.8563, 150.1000, 3.5547, -1622.2632, 158.2154, 3.5547, 138.4562, "San Fierro Easter Basin", 2},
+	{20, -469.3106, 608.4298, 15.1365, -481.3058, 609.6005, 10.1464, 267.2355, "Las Venturas Bone County", 2},
+	{21, -654.1920, 915.2777, 11.7879, -657.4455, 900.7539, 6.9163, 354.2154, "Las Venturas Tierra Robada", 2},
+	{22, -859.5013, 1421.9749, 13.9314, -868.9758, 1404.7815, 9.4526, 332.9549, "Las Venturas Las Barrancas", 2},
+	{23, 786.6932, 391.2599, 21.7641, 793.5041, 400.4509, 18.9261, 137.6931, "Red County Trailer Park", 2},
+	{24, 1635.2611, 624.1349, 10.8203, 1628.9712, 608.6076, 7.7557, 337.4368, "Las Venturas Randolph Industrial", 2},
+	{25, 2294.6013, 606.5112, 10.8203, 2293.3772, 595.7621, 7.7813, 340.5154, "Las Venturas South", 2},
+	{26, 2814.1946, 224.6030, 7.8577, 2812.5515, 240.8401, 1.8413, 174.2004, "Palomino Creek Hanky Panky Point", 2},
+	{27, 2858.5774, -217.7820, 11.3871, 2869.5491, -222.4245, 7.9285, 53.9402, "Red County Palomino Creek", 2},
+	{28, 2951.3684, -1455.3141, 10.6958, 2956.3003, -1464.9729, 9.3881, 345.6354, "Los Santos East Beach Plaza", 2},
+	{29, 2900.6445, -2049.4778, 3.5480, 2914.5015, -2052.2422, 3.5480, 89.5435, "Los Santos East Beach", 2},
+	{30, 2689.0317, -2327.4502, 13.3327, 2699.8652, -2327.0354, 13.3324, 90.4986, "Los Santos Harbour", 2},
+	{31, 707.9387, -1739.6006, 14.0428, 706.5930, -1726.5690, 8.6875, 184.1178, "Los Santos Santa Marina Canal", 2},
+	{32, 160.0530, -1884.6571, 3.7734, 167.7120, -1885.2415, 1.3050, 354.0833, "Los Santos Santa Marina Beach", 2},
+	{33, -10.9137, -1099.2134, 7.4195, 0.3631, -1097.6772, 3.8187, 78.4862, "Los Santos Flint County", 2},
+	{34, -352.2413, -446.0833, 7.2255, -339.8123, -454.7617, 3.4243, 45.0659, "Los Santos Fallen Tree", 2},
+	{35, 380.6955, -255.6080, 2.6073, 384.6530, -264.3894, 1.2717, 11.4184, "Red County Blueberry", 2},
+	{36, 1410.1971, -303.9029, 3.4553, 1407.9508, -290.0535, 1.9253, 197.1060, "Los Santos Mulholland", 2},
+	{37, 2128.3730, -84.5710, 2.4684, 2114.9148, -96.4722, 2.1952, 302.0951, "Palomino Creek Fisher's Lagoon", 2},
+	{38, -2652.1470, -2223.5852, 8.2197, -2655.7012, -2212.4973, 5.2244, 203.1263, "Angel Pine", 2},
+	{39, -1258.9299, -2909.0313, 57.0163, -1265.0083, -2928.3586, 47.8922, 332.3703, "Whetstone", 2},
+
+	/* Air Travel */
+	{40, 1683.5175, 1447.8961, 10.7714, 1683.5175, 1447.8961, 10.7714, 272.3454, "Las Venturas Airport", 3},
+	{41, 406.8473, 2534.8713, 16.5465, 406.8473, 2534.8713, 16.5465, 132.7081, "Las Venturas Boneyard Airfield", 3},
+	{42, -1423.1484, -289.1392, 14.1484, -1423.1484, -289.1392, 14.1484, 137.1859, "San Fierro Airport", 3},
+	{43, 1577.3860,-1330.0430,16.4844,1577.3860,-1330.0430,16.4844,316.2920, "Los Santos Startower", 3},
+	{44, 1449.1116, -2286.8623, 13.5469, 1449.1116, -2286.8623, 13.5469, 90.5432, "Los Santos Airport", 3}
 };
 
 main() {
@@ -340,7 +379,7 @@ ocmd:loadcar(playerid, params[])
 	{
 		if(!IsPlayerInRangeOfPoint(playerid, 3, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ])) continue;
 		new string[256];
-		mysql_format(handler, string, sizeof(string), "SELECT * FROM `vehicles` WHERE `owner` = '%d'", pInfo[playerid][id]);
+		mysql_format(handler, string, sizeof(string), "SELECT * FROM `Vehicles` WHERE `owner` = '%d'", pInfo[playerid][id]);
 		mysql_pquery(handler, string, "ShowPlayerVehicles", "dd", playerid, i);
 		return 1;
 	}
@@ -399,62 +438,166 @@ ocmd:fixveh(playerid) {
 }
 
 ocmd:travel(playerid) {
+	new string[1024];
 	if(pInfo[playerid][LoggedIn] == 0) return 1;
 	for(new i = 0; i < sizeof(TravelPos); i++) {
 		if(IsPlayerInRangeOfPoint(playerid, 3.0, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ])) {
-			if(i == 0) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spinybed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 1) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 2) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 3) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			}  else if(i == 4) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 5) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 6) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 7) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 8) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 9) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 10) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "East Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 11) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
-			} else if(i == 12) {
-				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos", "Travel", "Cancel");
-				SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
-				return 1;
+			/* Train Travel */
+			if(i == 0) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spinybed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood", "Travel", "Cancel");
+			else if(i == 1) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station", "Travel", "Cancel");
+			else if(i == 2) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro", "Travel", "Cancel");
+			else if(i == 3) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley", "Travel", "Cancel");
+			else if(i == 4) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station", "Travel", "Cancel");
+			else if(i == 5) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin", "Travel", "Cancel");
+			else if(i == 6) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring", "Travel", "Cancel");
+		 	else if(i == 7) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch", "Travel", "Cancel");
+			else if(i == 8) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Sobell\nLas Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station", "Travel", "Cancel");
+			else if(i == 9) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Linden\nEast Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed", "Travel", "Cancel");
+			else if(i == 10) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "East Los Santos\nLos Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell", "Travel", "Cancel");
+			else if(i == 11) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Idlewood\nLos Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden", "Travel", "Cancel");
+			else if(i == 12) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Train Station\nLos Santos Metro\nSan Fierro Foster Valley\nSan Fierro Train Station\nSan Fierro Easter Basin\nLas Venturas Octane Spring\nLas Venturas Spread Ranch\nLas Venturas Train Station\nLas Venturas Spiny Bed\nLas Venturas Sobell\nLas Venturas Linden\nEast Los Santos", "Travel", "Cancel");
+
+			/* Boat Travel */
+			else if(i == 13) {
+				strcat(string, "San Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\n");
+				strcat(string, "Red County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\n");
+				strcat(string, "Los Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 14) {
+				strcat(string, "Bayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\n");
+				strcat(string, "Las Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\n");
+				strcat(string, "Los Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 15) {
+				strcat(string, "San Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\n");
+				strcat(string, "Las Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\n");
+				strcat(string, "Los Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 16) {
+				strcat(string, "San Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\n");
+				strcat(string, "Palomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\n");
+				strcat(string, "Red County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 17) {
+				strcat(string, "San Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\n");
+				strcat(string, "Red County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\n");
+				strcat(string, "Los Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 18) {
+				strcat(string, "Las Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\n");
+				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\n");
+				strcat(string, "Palomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 19) {
+				strcat(string, "Las Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\n");
+				strcat(string, "Los Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\n");
+				strcat(string, "Angel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 20) {
+				strcat(string, "Las Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\n");
+				strcat(string, "Los Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\n");
+				strcat(string, "Whetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 21) {
+				strcat(string, "Red County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\n");
+				strcat(string, "Los Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\n");
+				strcat(string, "San Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 22) {
+				strcat(string, "Las Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\n");
+				strcat(string, "Los Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\n");
+				strcat(string, "San Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 23) {
+				strcat(string, "Las Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\n");
+				strcat(string, "Los Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\n");
+				strcat(string, "Bayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 24) {
+				strcat(string, "Palomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\n");
+				strcat(string, "Los Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\n");
+				strcat(string, "San Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 25) {
+				strcat(string, "Red County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\n");
+				strcat(string, "Red County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\n");
+				strcat(string, "San Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 26) {
+				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\n");
+				strcat(string, "Los Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\n");
+				strcat(string, "San Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 27) {
+				strcat(string, "Los Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\n");
+				strcat(string, "Palomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\n");
+				strcat(string, "Las Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 28) {
+				strcat(string, "Los Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\n");
+				strcat(string, "Angel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\n");
+				strcat(string, "Las Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 29) {
+				strcat(string, "Los Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\n");
+				strcat(string, "Whetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\n");
+				strcat(string, "Las Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 30) {
+				strcat(string, "Los Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\n");
+				strcat(string, "San Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\n");
+				strcat(string, "Red County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 31) {
+				strcat(string, "Los Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\n");
+				strcat(string, "San Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\n");
+				strcat(string, "Las Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 32) {
+				strcat(string, "Los Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\n");
+				strcat(string, "Bayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\n");
+				strcat(string, "Las Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 33) {
+				strcat(string, "Red County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\n");
+				strcat(string, "San Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\n");
+				strcat(string, "Palomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 34) {
+				strcat(string, "Los Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\n");
+				strcat(string, "San Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\n");
+				strcat(string, "Red County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 35) {
+				strcat(string, "Palomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\n");
+				strcat(string, "San Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\n");
+				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 36) {
+				strcat(string, "Angel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\n");
+				strcat(string, "Las Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\n");
+				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 37) {
+				strcat(string, "Whetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\n");
+				strcat(string, "Las Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach Plaza\n");
+				strcat(string, "Los Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 38) {
+				strcat(string, "San Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Graver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\n");
+				strcat(string, "Las Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach Plaza\nLos Santos East Beach\n");
+				strcat(string, "Los Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			}
+
+			/* Air Travel */
+			else if(i == 39) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Boneyard Airfield\nSan Fierro Airport\nLos Santos Startower\nLos Santos Airport", "Travel", "Cancel");
+			else if(i == 40) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Airport\nLos Santos Startower\nLos Santos Airport\nLas Venturas Airport", "Travel", "Cancel");
+			else if(i == 41) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Startower\nLos Santos Airport\nLas Venturas Airport\nLas Venturas Boneyard Airfield", "Travel", "Cancel");
+			else if(i == 42) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Airport\nLas Venturas Airport\nLas Venturas Boneyard Airfield\nSan Fierro Airport", "Travel", "Cancel");
+			else if(i == 43) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Airport\nLas Venturas Boneyard Airfield\nSan Fierro Airport\nLos Santos Startower", "Travel", "Cancel");
+			SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
+			return 1;
 		}
 	} return SendClientMessage(playerid, COLOR_GREY, "You are not at a train station!");
 }
@@ -484,8 +627,6 @@ ocmd:reload(playerid, params[])
 	return 1;
 }
 
-
-
 public OnGameModeInit()
 {
 	mysql_log(ALL);
@@ -493,11 +634,19 @@ public OnGameModeInit()
 	if(mysql_errno() != 0) printf("Database connection could not be established! (%d)", mysql_errno());
 	else print("Database connection successfully established!");
 
-	mysql_pquery(handler, "SELECT * FROM `garages`", "LoadGarages");
+	mysql_pquery(handler, "SELECT * FROM `Garages`", "LoadGarages");
 
 	for(new i = 0; i < sizeof(TravelPos); i++) {
-		CreateDynamicPickup(1239, 1, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ]);
-		CreateDynamic3DTextLabel("{9A2D25}Train Station{EEEE00}\nTicket price: $45\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
+		if(TravelPos[i][Type] == 1) { // Train
+			CreateDynamicPickup(1239, 1, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ]);
+			CreateDynamic3DTextLabel("{9A2D25}Train Station{EEEE00}\nTicket price: $45\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
+		} else if(TravelPos[i][Type] == 2) { // Boat
+			CreateDynamicPickup(1239, 1, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ]);
+			CreateDynamic3DTextLabel("{9A2D25}Boat Travel{EEEE00}\nTicket price: $45\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
+		} else if(TravelPos[i][Type] == 3) { // Air
+			CreateDynamicPickup(1239, 1, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ]);
+			CreateDynamic3DTextLabel("{9A2D25}Air Travel{EEEE00}\nTicket price: $45\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
+		}
 	}
 
 	// ----- Disables/Settings -----
@@ -773,7 +922,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(!response) return 1;
 		    new dbid, trash[10], string[128], plate[15], Float:Coords[4], gID = GetNearestGarage(playerid), Park[4] = false;
 			sscanf(inputtext, "s[4]d", trash, dbid);
-			mysql_format(handler, string, sizeof(string), "SELECT * FROM `vehicles` WHERE `id` = '%d' AND `owner` = '%d'", dbid, pInfo[playerid][id]);
+			mysql_format(handler, string, sizeof(string), "SELECT * FROM `Vehicles` WHERE `id` = '%d' AND `owner` = '%d'", dbid, pInfo[playerid][id]);
 
 			for(new j = 1, d = GetVehiclePoolSize() + 1; j < d; j++)
 			{
@@ -859,9 +1008,20 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(!response) return 1;
 			if(GetPlayerMoney(playerid) < 45) return SendClientMessage(playerid, COLOR_GREY, "You don't have enough money to travel!");
 			new travelID = listitem+GetPVarInt(playerid, "Travel");
-			if(travelID > 12) travelID = (travelID -12)-1;
-			SetPlayerPos(playerid, TravelPos[travelID][tDX], TravelPos[travelID][tDY], TravelPos[travelID][tDZ]);
-			SetPlayerFacingAngle(playerid, TravelPos[travelID][tDA]);
+			new travID = GetPVarInt(playerid, "Travel")-1;
+			if(TravelPos[travID][Type] == 1) {
+				if(travelID > 12) travelID = (travelID -13);
+				SetPlayerPos(playerid, TravelPos[travelID][tDX], TravelPos[travelID][tDY], TravelPos[travelID][tDZ]);
+				SetPlayerFacingAngle(playerid, TravelPos[travelID][tDA]);
+			} else if(TravelPos[travID][Type] == 2) {
+				if(travelID > 38) travelID = (travelID -26);
+				SetPlayerPos(playerid, TravelPos[travelID][tDX], TravelPos[travelID][tDY], TravelPos[travelID][tDZ]);
+				SetPlayerFacingAngle(playerid, TravelPos[travelID][tDA]);
+			} else if(TravelPos[travID][Type] == 3) {
+				if(travelID > 43) travelID = (travelID -5);
+				SetPlayerPos(playerid, TravelPos[travelID][tDX], TravelPos[travelID][tDY], TravelPos[travelID][tDZ]);
+				SetPlayerFacingAngle(playerid, TravelPos[travelID][tDA]);
+			}
 			SendFormMessage(playerid, COLOR_YELLOW, "You have traveled to %s and had to pay $45.", TravelPos[travelID][tsName]);
 			GivePlayerMoney(playerid, -45);
 			DeletePVar(playerid, "Travel");
@@ -873,7 +1033,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			    if(IsValidDynamicPickup(gInfo[i][g_Pickup])) DestroyDynamicPickup(gInfo[i][g_Pickup]);
 			    if(IsValidDynamic3DTextLabel(gInfo[i][g_3DText])) DestroyDynamic3DTextLabel(gInfo[i][g_3DText]);
 			}
-			mysql_pquery(handler, "SELECT * FROM `garages`", "LoadGarages");
+			mysql_pquery(handler, "SELECT * FROM `Garages`", "LoadGarages");
 			SendClientMessage(playerid, COLOR_RED, "Garages have been reloaded successfully.");
 			AdminLog("/reload", "Garages", Name[playerid], "-", currentTime(1));
 			return 1;
@@ -985,7 +1145,7 @@ public LoadGarages()
 	new name[64], label[64];
 	for(new i; i < rows; i++)
 	{
-	    cache_get_value_name_float(i, "GarageX", gInfo[i][g_GarageX]);
+		cache_get_value_name_float(i, "GarageX", gInfo[i][g_GarageX]);
 		cache_get_value_name_float(i, "GarageY", gInfo[i][g_GarageY]);
 		cache_get_value_name_float(i, "GarageZ", gInfo[i][g_GarageZ]);
 
