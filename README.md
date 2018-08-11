@@ -4,10 +4,10 @@
 Name|Work
 -|-
 Bobby|Mapping, Lead-Developer
-Shirobaka, Whice.|Lead-Developer
-Riconeo|Hosting of the development team and the public servers
 Dayme, Jumpin|Moderation of the bulletin board
 Kaliber|Counseling for bug fixing and moral support
+Riconeo|Hosting of the development team and the public servers
+Shirobaka, Whice.|Lead-Developer
 Dan|timerfix include/plugin
 Emmet\_|sscanf2 include/plugin
 Greg Garner|float include
