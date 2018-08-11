@@ -436,7 +436,7 @@ ocmd:fixveh(playerid) {
 	if(pInfo[playerid][Adminlevel] < 1) return NoPermission(playerid);
 	if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, COLOR_GREY, "You need to be in a vehicle!");
 	RepairVehicle(GetPlayerVehicleID(playerid));
-	SendClientMessage(playerid, COLOR_GREEN, "Your vehicle was successfully repaired!");
+	SendClientMessage(playerid, COLOR_GREEN, "Your vehicle has been successfully repaired!");
 	AdminLog("/fixveh", "-", Name[playerid], "-", currentTime(1));
 	return 1;
 }
@@ -641,6 +641,17 @@ public OnGameModeInit()
 	else print("Database connection successfully established!");
 
 	mysql_pquery(handler, "SELECT * FROM `Garages`", "LoadGarages");
+
+	/* Objects */
+	CreateDynamicObject(3934,-2228.8000000,590.2000100,50.4000000,0.0000000,0.0000000,270.0000000); //object(helipad01) (1)
+	CreateDynamicObject(16337,-2218.3000000,581.2000100,50.6000000,0.0000000,0.0000000,0.7480000); //object(des_cranecontrol) (1)
+	CreateDynamicObject(1215,-2215.6001000,601.7999900,51.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (1)
+	CreateDynamicObject(1215,-2219.6001000,579.0999800,51.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (2)
+	CreateDynamicObject(1215,-2215.6001000,582.4000200,51.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (3)
+	CreateDynamicObject(1215,-2236.8999000,579.0999800,51.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (4)
+	CreateDynamicObject(1215,-2242.3000000,583.7999900,51.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (5)
+	CreateDynamicObject(1215,-2242.3000000,597.0999800,51.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (6)
+	CreateDynamicObject(1215,-2236.8000000,601.9000200,51.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (7)
 
 	for(new i = 0; i < sizeof(TravelPos); i++) {
 		if(TravelPos[i][Type] == 1) { // Train
