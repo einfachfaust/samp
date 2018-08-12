@@ -167,6 +167,10 @@ forward KickPlayer(playerid);
 forward ShowPlayerVehicles(playerid, garageid);
 forward LoadGarages();
 forward ResetDamageTimer(playerid);
+forward UpdateClock();
+forward OneSecondTimer(playerid);
+forward RespawnPlayer(playerid, Float:X, Float:Y, Float:Z);
+forward Unfreeze(playerid);
 
 new MySQL:handler;
 new Name[MAX_PLAYER_NAME][MAX_PLAYERS];
@@ -176,6 +180,13 @@ new Float:MarkPos[MAX_PLAYERS][4];
 new MarkSaved[MAX_PLAYERS];
 new LogIn[MAX_PLAYERS];
 new DamageTimer[MAX_PLAYERS];
+new TimeHour;
+new TimeMinute;
+new Text:Clock;
+new PlayerText:Health[MAX_PLAYERS];
+new PlayerText:Armour[MAX_PLAYERS];
+new OneSecond[MAX_PLAYERS];
+new Menu:HoboMenu;
 enum rSp {
 	rsID,
 	Float:spawnX,
@@ -237,31 +248,34 @@ new TravelPos[][TravelData] = {
 	{19, -1629.8563, 150.1000, 3.5547, -1622.2632, 158.2154, 3.5547, 138.4562, "San Fierro Easter Basin", 2},
 	{20, -469.3106, 608.4298, 15.1365, -481.3058, 609.6005, 10.1464, 267.2355, "Las Venturas Bone County", 2},
 	{21, -654.1920, 915.2777, 11.7879, -657.4455, 900.7539, 6.9163, 354.2154, "Las Venturas Tierra Robada", 2},
-	{22, -859.5013, 1421.9749, 13.9314, -868.9758, 1404.7815, 9.4526, 332.9549, "Las Venturas Las Barrancas", 2},
-	{23, 786.6932, 391.2599, 21.7641, 793.5041, 400.4509, 18.9261, 137.6931, "Red County Trailer Park", 2},
-	{24, 1635.2611, 624.1349, 10.8203, 1628.9712, 608.6076, 7.7557, 337.4368, "Las Venturas Randolph Industrial", 2},
-	{25, 2294.6013, 606.5112, 10.8203, 2293.3772, 595.7621, 7.7813, 340.5154, "Las Venturas South", 2},
-	{26, 2814.1946, 224.6030, 7.8577, 2812.5515, 240.8401, 1.8413, 174.2004, "Palomino Creek Hanky Panky Point", 2},
-	{27, 2858.5774, -217.7820, 11.3871, 2869.5491, -222.4245, 7.9285, 53.9402, "Red County Palomino Creek", 2},
-	{28, 2951.3684, -1455.3141, 10.6958, 2956.3003, -1464.9729, 9.3881, 345.6354, "Los Santos East Beach Plaza", 2},
-	{29, 2900.6445, -2049.4778, 3.5480, 2914.5015, -2052.2422, 3.5480, 89.5435, "Los Santos East Beach", 2},
-	{30, 2689.0317, -2327.4502, 13.3327, 2699.8652, -2327.0354, 13.3324, 90.4986, "Los Santos Harbour", 2},
-	{31, 707.9387, -1739.6006, 14.0428, 706.5930, -1726.5690, 8.6875, 184.1178, "Los Santos Santa Marina Canal", 2},
-	{32, 160.0530, -1884.6571, 3.7734, 167.7120, -1885.2415, 1.3050, 354.0833, "Los Santos Santa Marina Beach", 2},
-	{33, -10.9137, -1099.2134, 7.4195, 0.3631, -1097.6772, 3.8187, 78.4862, "Los Santos Flint County", 2},
-	{34, -352.2413, -446.0833, 7.2255, -339.8123, -454.7617, 3.4243, 45.0659, "Los Santos Fallen Tree", 2},
-	{35, 380.6955, -255.6080, 2.6073, 384.6530, -264.3894, 1.2717, 11.4184, "Red County Blueberry", 2},
-	{36, 1410.1971, -303.9029, 3.4553, 1407.9508, -290.0535, 1.9253, 197.1060, "Los Santos Mulholland", 2},
-	{37, 2128.3730, -84.5710, 2.4684, 2114.9148, -96.4722, 2.1952, 302.0951, "Palomino Creek Fisher's Lagoon", 2},
-	{38, -2652.1470, -2223.5852, 8.2197, -2655.7012, -2212.4973, 5.2244, 203.1263, "Angel Pine", 2},
-	{39, -1258.9299, -2909.0313, 57.0163, -1265.0083, -2928.3586, 47.8922, 332.3703, "Whetstone", 2},
+	{22, -382.3287, 1166.7662, 19.3855, -393.0803, 1171.6830, 15.9760, 253.5828, "Las Venturas Fort Carson", 2},
+	{23, -859.5013, 1421.9749, 13.9314, -868.9758, 1404.7815, 9.4526, 332.9549, "Las Venturas Las Barrancas", 2},
+	{24, 786.6932, 391.2599, 21.7641, 793.5041, 400.4509, 18.9261, 137.6931, "Red County Trailer Park", 2},
+	{25, 1635.2611, 624.1349, 10.8203, 1628.9712, 608.6076, 7.7557, 337.4368, "Las Venturas Randolph Industrial", 2},
+	{26, 2294.6013, 606.5112, 10.8203, 2293.3772, 595.7621, 7.7813, 340.5154, "Las Venturas South", 2},
+	{27, 2814.1946, 224.6030, 7.8577, 2812.5515, 240.8401, 1.8413, 174.2004, "Palomino Creek Hanky Panky Point", 2},
+	{28, 2858.5774, -217.7820, 11.3871, 2869.5491, -222.4245, 7.9285, 53.9402, "Red County Palomino Creek", 2},
+	{29, 2951.3684, -1455.3141, 10.6958, 2956.3003, -1464.9729, 9.3881, 345.6354, "Los Santos East Beach Plaza", 2},
+	{30, 2900.6445, -2049.4778, 3.5480, 2914.5015, -2052.2422, 3.5480, 89.5435, "Los Santos East Beach", 2},
+	{31, 2689.0317, -2327.4502, 13.3327, 2699.8652, -2327.0354, 13.3324, 90.4986, "Los Santos Harbour", 2},
+	{32, 707.9387, -1739.6006, 14.0428, 706.5930, -1726.5690, 8.6875, 184.1178, "Los Santos Santa Marina Canal", 2},
+	{33, 160.0530, -1884.6571, 3.7734, 167.7120, -1885.2415, 1.3050, 354.0833, "Los Santos Santa Marina Beach", 2},
+	{34, -10.9137, -1099.2134, 7.4195, 0.3631, -1097.6772, 3.8187, 78.4862, "Los Santos Flint County", 2},
+	{35, -352.2413, -446.0833, 7.2255, -339.8123, -454.7617, 3.4243, 45.0659, "Los Santos Fallen Tree", 2},
+	{36, 380.6955, -255.6080, 2.6073, 384.6530, -264.3894, 1.2717, 11.4184, "Red County Blueberry", 2},
+	{37, 1410.1971, -303.9029, 3.4553, 1407.9508, -290.0535, 1.9253, 197.1060, "Los Santos Mulholland", 2},
+	{38, 2128.3730, -84.5710, 2.4684, 2114.9148, -96.4722, 2.1952, 302.0951, "Palomino Creek Fisher's Lagoon", 2},
+	{39, -2652.1470, -2223.5852, 8.2197, -2655.7012, -2212.4973, 5.2244, 203.1263, "Angel Pine", 2},
+	{40, -1258.9299, -2909.0313, 57.0163, -1265.0083, -2928.3586, 47.8922, 332.3703, "Whetstone", 2},
 
 	/* Air Travel */
-	{40, 1683.5175, 1447.8961, 10.7714, 1683.5175, 1447.8961, 10.7714, 272.3454, "Las Venturas Airport", 3},
-	{41, 406.8473, 2534.8713, 16.5465, 406.8473, 2534.8713, 16.5465, 132.7081, "Las Venturas Boneyard Airfield", 3},
-	{42, -1423.1484, -289.1392, 14.1484, -1423.1484, -289.1392, 14.1484, 137.1859, "San Fierro Airport", 3},
-	{43, 1577.3860,-1330.0430,16.4844,1577.3860,-1330.0430,16.4844,316.2920, "Los Santos Startower", 3},
-	{44, 1449.1116, -2286.8623, 13.5469, 1449.1116, -2286.8623, 13.5469, 90.5432, "Los Santos Airport", 3}
+	{41, -2243.3499, 2340.9443, 4.9844, -2243.1079, 2327.2837, 4.9844, 347.8817, "Bayside", 3},
+	{42, 1683.5175, 1447.8961, 10.7714, 1683.5175, 1447.8961, 10.7714, 272.3454, "Las Venturas Airport", 3},
+	{43, 406.8473, 2534.8713, 16.5465, 406.8473, 2534.8713, 16.5465, 132.7081, "Las Venturas Boneyard Airfield", 3},
+	{44, -1423.1484, -289.1392, 14.1484, -1423.1484, -289.1392, 14.1484, 137.1859, "San Fierro Airport", 3},
+	{45, -2221.5974, 576.4275, 35.1719, -2216.2439, 577.3145, 35.1719, 92.6719, "San Fierro Chinatown", 3},
+	{46, 1577.3860,-1330.0430,16.4844,1577.3860,-1330.0430,16.4844,316.2920, "Los Santos Startower", 3},
+	{47, 1449.1116, -2286.8623, 13.5469, 1449.1116, -2286.8623, 13.5469, 90.5432, "Los Santos Airport", 3}
 };
 
 main() {
@@ -274,6 +288,7 @@ main() {
 
 // ----- Commands -----
 ocmd:spawn(playerid, params[]) {
+	if(pInfo[playerid][Adminlevel] < 3) return NoPermission(playerid);
 	new Pos = random(sizeof(randomSpawn));
 	SetPlayerPos(playerid, randomSpawn[Pos][spawnX], randomSpawn[Pos][spawnY], randomSpawn[Pos][spawnZ]);
 	SetPlayerFacingAngle(playerid, randomSpawn[Pos][spawnA]);
@@ -290,7 +305,47 @@ ocmd:spawn(playerid, params[]) {
 	return 1;
 }
 
-ocmd:respawn(playerid, params[]) {
+ocmd:respawn(playerid) {
+	new Float:rX, Float:rY, Float:rZ;
+	if(pInfo[playerid][dTimer] != 0) return SendClientMessage(playerid, COLOR_GREY, "You can't use this command just now!");
+	if(GetPlayerMoney(playerid) < 300) return SendClientMessage(playerid, COLOR_GREY, "You don't have enough money to respawn!");
+	GetPlayerPos(playerid, rX, rY, rZ);
+	SetTimerEx("RespawnPlayer", 10000, 0, "ifff", playerid, rX, rY, rZ);
+	SendClientMessage(playerid, COLOR_YELLOW, "You will respawn in 10 seconds, this cost you $300. Please stay at your current position!");
+	return 1;
+}
+
+ocmd:sethealth(playerid, params[]) {
+	new target, Float:health;
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	if(sscanf(params, "uf", target, health)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /sethealth <PlayerName/PlayerID> <Health>");
+	if(health < 0 || health > 255) return SendClientMessage(playerid, COLOR_GREY, "Health have be between 0 and 255!");
+	SetPlayerHealth(target, health);
+	SendFormMessage(playerid, COLOR_YELLOW, "You have setted the health of %s to %.0f", Name[target], health);
+	SendFormMessage(target, COLOR_YELLOW, "%s has setted your health to %.0f", Name[playerid], health);
+	return 1;
+}
+
+ocmd:setarmour(playerid, params[]) {
+	new target, Float:armour;
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	if(sscanf(params, "uf", target, armour)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /sethealth <PlayerName/PlayerID> <Armour>");
+	if(armour < 0 || armour > 255) return SendClientMessage(playerid, COLOR_GREY, "Armour have be between 0 and 255!");
+	SetPlayerArmour(target, armour);
+	SendFormMessage(playerid, COLOR_YELLOW, "You have setted the armour of %s to %.0f", Name[target], armour);
+	SendFormMessage(target, COLOR_YELLOW, "%s has setted your armour to %.0f", Name[playerid], armour);
+	return 1;
+}
+
+ocmd:setweapon(playerid, params[]) {
+	new weap, ammo, target;
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	if(sscanf(params, "uii", target, weap, ammo)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /setweapon <PlayerName/PlayerID> <WeaponID> <Ammo amount>");
+	if(weap < 1 || weap > 42 || weap < 22 && weap > 18) return SendClientMessage(playerid, COLOR_GREY, "Invalid weapon id!");
+	if(ammo < 1 || ammo > 9999) return SendClientMessage(playerid, COLOR_GREY, "Invalid ammo amount!");
+	GivePlayerWeapon(target, weap, ammo);
+	SendFormMessage(playerid, COLOR_YELLOW, "You gave %s a weapon!", Name[target]);
+	SendFormMessage(target, COLOR_YELLOW, "%s gave you a weapon!", Name[playerid]);
 	return 1;
 }
 
@@ -432,6 +487,39 @@ ocmd@2:dveh,delveh(playerid, params[]) {
 	}
 }
 
+ocmd:buy(playerid) {
+	if(IsPlayerInRangeOfPoint(playerid, 2.0, 458.5027, -107.3624, 999.5454)) {
+		ShowMenuForPlayer(HoboMenu, playerid);
+		TogglePlayerControllable(playerid, 0);
+	} return 1;
+}
+
+ocmd:enter(playerid) {
+	if(IsPlayerInAnyVehicle(playerid)) return 1;
+	if(IsPlayerInRangeOfPoint(playerid, 5.0, 875.9323, -968.3762, 37.1875)) {
+		TogglePlayerControllable(playerid, 0);
+		SetTimerEx("Unfreeze", 1500, 0, "i", playerid);
+		SetPlayerPos(playerid, 459.0843, -110.5203, 999.5454);
+		SetPlayerFacingAngle(playerid, 2.4657);
+		SetPlayerInterior(playerid, 5);
+	} return 1;
+}
+
+ocmd:exit(playerid) {
+	if(IsPlayerInAnyVehicle(playerid)) return 1;
+	if(IsPlayerInRangeOfPoint(playerid, 2.0, 458.8982, -110.7152, 999.5454)) {
+		SetPlayerPos(playerid, 875.9323, -968.3762, 37.1875);
+		SetPlayerInterior(playerid, 0);
+	} return 1;
+}
+
+ocmd:jetpack(playerid) {
+	if(IsPlayerInAnyVehicle(playerid)) return 1;
+	if(pInfo[playerid][Adminlevel] == 3) {
+		SetPlayerSpecialAction(playerid, SPECIAL_ACTION_USEJETPACK);
+	} return NoPermission(playerid);
+}
+
 ocmd:fixveh(playerid) {
 	if(pInfo[playerid][Adminlevel] < 1) return NoPermission(playerid);
 	if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, COLOR_GREY, "You need to be in a vehicle!");
@@ -465,143 +553,150 @@ ocmd:travel(playerid) {
 
 			/* Boat Travel */
 			else if(i == 13) {
-				strcat(string, "San Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\n");
+				strcat(string, "San Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\n");
 				strcat(string, "Red County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\n");
 				strcat(string, "Los Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 14) {
-				strcat(string, "Bayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\n");
+				strcat(string, "Bayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\n");
 				strcat(string, "Las Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\n");
 				strcat(string, "Los Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 15) {
-				strcat(string, "San Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\n");
+				strcat(string, "San Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\n");
 				strcat(string, "Las Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\n");
 				strcat(string, "Los Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 16) {
-				strcat(string, "San Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\n");
+				strcat(string, "San Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\n");
 				strcat(string, "Palomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\n");
 				strcat(string, "Red County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 17) {
-				strcat(string, "San Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\n");
+				strcat(string, "San Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\n");
 				strcat(string, "Red County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\n");
 				strcat(string, "Los Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 18) {
-				strcat(string, "Las Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\n");
+				strcat(string, "Las Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\n");
 				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\n");
 				strcat(string, "Palomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 19) {
-				strcat(string, "Las Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\n");
+				strcat(string, "Las Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\n");
 				strcat(string, "Los Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\n");
 				strcat(string, "Angel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 20) {
-				strcat(string, "Las Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\n");
+				strcat(string, "Las Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\n");
 				strcat(string, "Los Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\n");
 				strcat(string, "Whetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 21) {
-				strcat(string, "Red County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\n");
-				strcat(string, "Los Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\n");
-				strcat(string, "San Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nNearest Airport\nNearest Train Station");
+				strcat(string, "Las Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\n");
+				strcat(string, "Los Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\n");
+				strcat(string, "Whetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 22) {
-				strcat(string, "Las Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\n");
-				strcat(string, "Los Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\n");
-				strcat(string, "San Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nNearest Airport\nNearest Train Station");
+				strcat(string, "Red County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\n");
+				strcat(string, "Los Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\n");
+				strcat(string, "San Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 23) {
-				strcat(string, "Las Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\n");
-				strcat(string, "Los Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\n");
-				strcat(string, "Bayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nNearest Airport\nNearest Train Station");
+				strcat(string, "Las Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\n");
+				strcat(string, "Los Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\n");
+				strcat(string, "San Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 24) {
-				strcat(string, "Palomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\n");
-				strcat(string, "Los Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\n");
-				strcat(string, "San Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nNearest Airport\nNearest Train Station");
+				strcat(string, "Las Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\n");
+				strcat(string, "Los Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\n");
+				strcat(string, "Bayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 25) {
-				strcat(string, "Red County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\n");
-				strcat(string, "Red County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\n");
-				strcat(string, "San Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nNearest Airport\nNearest Train Station");
+				strcat(string, "Palomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\n");
+				strcat(string, "Los Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\n");
+				strcat(string, "San Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 26) {
-				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\n");
-				strcat(string, "Los Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\n");
-				strcat(string, "San Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nNearest Airport\nNearest Train Station");
+				strcat(string, "Red County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\n");
+				strcat(string, "Red County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\n");
+				strcat(string, "San Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 27) {
-				strcat(string, "Los Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\n");
-				strcat(string, "Palomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\n");
-				strcat(string, "Las Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nNearest Airport\nNearest Train Station");
+				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\n");
+				strcat(string, "Los Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\n");
+				strcat(string, "San Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 28) {
-				strcat(string, "Los Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\n");
-				strcat(string, "Angel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\n");
-				strcat(string, "Las Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nNearest Airport\nNearest Train Station");
+				strcat(string, "Los Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\n");
+				strcat(string, "Palomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\n");
+				strcat(string, "Las Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 29) {
-				strcat(string, "Los Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\n");
-				strcat(string, "Whetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\n");
-				strcat(string, "Las Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nNearest Airport\nNearest Train Station");
+				strcat(string, "Los Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\n");
+				strcat(string, "Angel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\n");
+				strcat(string, "Las Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 30) {
-				strcat(string, "Los Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\n");
-				strcat(string, "San Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\n");
-				strcat(string, "Red County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nNearest Airport\nNearest Train Station");
+				strcat(string, "Los Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\n");
+				strcat(string, "Whetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\n");
+				strcat(string, "Las Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 31) {
-				strcat(string, "Los Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\n");
-				strcat(string, "San Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\n");
-				strcat(string, "Las Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nNearest Airport\nNearest Train Station");
+				strcat(string, "Los Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\n");
+				strcat(string, "San Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\n");
+				strcat(string, "Red County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 32) {
-				strcat(string, "Los Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\n");
-				strcat(string, "Bayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\n");
-				strcat(string, "Las Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nNearest Airport\nNearest Train Station");
+				strcat(string, "Los Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\n");
+				strcat(string, "San Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\n");
+				strcat(string, "Las Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 33) {
-				strcat(string, "Red County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\n");
-				strcat(string, "San Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\n");
-				strcat(string, "Palomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nNearest Airport\nNearest Train Station");
+				strcat(string, "Los Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\n");
+				strcat(string, "Bayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\n");
+				strcat(string, "Las Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 34) {
-				strcat(string, "Los Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\n");
-				strcat(string, "San Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\n");
-				strcat(string, "Red County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nNearest Airport\nNearest Train Station");
+				strcat(string, "Red County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\n");
+				strcat(string, "San Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\n");
+				strcat(string, "Palomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 35) {
-				strcat(string, "Palomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\n");
-				strcat(string, "San Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\n");
-				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nNearest Airport\nNearest Train Station");
+				strcat(string, "Los Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\n");
+				strcat(string, "San Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\n");
+				strcat(string, "Red County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 36) {
-				strcat(string, "Angel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\n");
-				strcat(string, "Las Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\n");
-				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nNearest Airport\nNearest Train Station");
+				strcat(string, "Palomino Creek Fisher's Lagoon\nAngel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\n");
+				strcat(string, "San Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\n");
+				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 37) {
-				strcat(string, "Whetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\n");
-				strcat(string, "Las Venturas Tierra Robada\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach Plaza\n");
-				strcat(string, "Los Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nNearest Airport\nNearest Train Station");
+				strcat(string, "Angel Pine\nWhetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\n");
+				strcat(string, "Las Venturas Bone County\nLas Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\n");
+				strcat(string, "Los Santos East Beach Plaza\nLos Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			} else if(i == 38) {
+				strcat(string, "Whetstone\nSan Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\n");
+				strcat(string, "Las Venturas Tierra Robada\nLas Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach Plaza\n");
+				strcat(string, "Los Santos East Beach\nLos Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nNearest Airport\nNearest Train Station");
+				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
+			} else if(i == 39) {
 				strcat(string, "San Fierro Ocean Flats\nSan Fierro Battery Point\nBayside\nSan Fierro Esplanade North\nSan Fierro Garver Bridge\nSan Fierro Easter Basin\nLas Venturas Bone County\nLas Venturas Tierra Robada\n");
-				strcat(string, "Las Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach Plaza\nLos Santos East Beach\n");
+				strcat(string, "Las Venturas Fort Carson\nLas Venturas Las Barrancas\nRed County Trailer Park\nLas Venturas Randolph Industrial\nLas Venturas South\nPalomino Creek Hanky Panky Point\nRed County Palomino Creek\nLos Santos East Beach Plaza\nLos Santos East Beach Plaza\nLos Santos East Beach\n");
 				strcat(string, "Los Santos Harbour\nLos Santos Santa Marina Canal\nLos Santos Santa Marina Beach\nLos Santos Flint County\nLos Santos Fallen Tree\nRed County Blueberry\nLos Santos Mulholland\nPalomino Creek Fisher's Lagoon\nAngel Pine\nNearest Airport\nNearest Train Station");
 				ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", string, "Travel", "Cancel");
 			}
 
 			/* Air Travel */
-			else if(i == 39) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Boneyard Airfield\nSan Fierro Airport\nLos Santos Startower\nLos Santos Airport\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
-			else if(i == 40) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Airport\nLos Santos Startower\nLos Santos Airport\nLas Venturas Airport\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
-			else if(i == 41) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Startower\nLos Santos Airport\nLas Venturas Airport\nLas Venturas Boneyard Airfield\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
-			else if(i == 42) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Airport\nLas Venturas Airport\nLas Venturas Boneyard Airfield\nSan Fierro Airport\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
-			else if(i == 43) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Airport\nLas Venturas Boneyard Airfield\nSan Fierro Airport\nLos Santos Startower\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
+			else if(i == 40) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Airport\nLas Venturas Boneyard Airfield\nSan Fierro Airport\nSan Fierro Chinatown\nLos Santos Startower\nLos Santos Airport\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
+			else if(i == 41) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Boneyard Airfield\nSan Fierro Airport\nSan Fierro Chinatown\nLos Santos Startower\nLos Santos Airport\nBayside\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
+			else if(i == 42) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Airport\nSan Fierro Chinatown\nLos Santos Startower\nLos Santos Airport\nLas Venturas Airport\nBayside\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
+			else if(i == 43) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "San Fierro Chinatown\nLos Santos Startower\nLos Santos Airport\nLas Venturas Airport\nBayside\nLas Venturas Boneyard Airfield\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
+			else if(i == 44) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Startower\nLos Santos Airport\nLas Venturas Airport\nBayside\nLas Venturas Boneyard Airfield\nSan Fierro Airport\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
+			else if(i == 45) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Los Santos Airport\nLas Venturas Airport\nBayside\nLas Venturas Boneyard Airfield\nSan Fierro Airport\nSan Fierro Chinatown\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
+			else if(i == 46) ShowPlayerDialog(playerid, D_TRAVEL, DIALOG_STYLE_LIST, "SA-MP.org | Travel", "Las Venturas Airport\nBayside\nLas Venturas Boneyard Airfield\nSan Fierro Airport\nSan Fierro Chinatown\nLos Santos Startower\nNearest Harbour\nNearest Train Station", "Travel", "Cancel");
 			SetPVarInt(playerid, "Travel", TravelPos[i][tID]);
 			return 1;
 		}
@@ -642,7 +737,23 @@ public OnGameModeInit()
 
 	mysql_pquery(handler, "SELECT * FROM `Garages`", "LoadGarages");
 
+	TimeHour = 6;
+	TimeMinute = 0;
+	SetTimer("UpdateClock", 10000, 1);
+
+	Clock = TextDrawCreate(548.332946, 22.700006, "06:00");
+	TextDrawLetterSize(Clock, 0.567666, 2.218514);
+	TextDrawAlignment(Clock, 1);
+	TextDrawColor(Clock, -1);
+	TextDrawSetShadow(Clock, 0);
+	TextDrawSetOutline(Clock, 2);
+	TextDrawBackgroundColor(Clock, 255);
+	TextDrawFont(Clock, 3);
+	TextDrawSetProportional(Clock, 1);
+	TextDrawSetShadow(Clock, 0);
+
 	/* Objects */
+	// HeliPad SF
 	CreateDynamicObject(3934,-2228.8000000,590.2000100,50.4000000,0.0000000,0.0000000,270.0000000); //object(helipad01) (1)
 	CreateDynamicObject(16337,-2218.3000000,581.2000100,50.6000000,0.0000000,0.0000000,0.7480000); //object(des_cranecontrol) (1)
 	CreateDynamicObject(1215,-2215.6001000,601.7999900,51.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (1)
@@ -653,10 +764,169 @@ public OnGameModeInit()
 	CreateDynamicObject(1215,-2242.3000000,597.0999800,51.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (6)
 	CreateDynamicObject(1215,-2236.8000000,601.9000200,51.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (7)
 
+	// SF Hafen
+	CreateDynamicObject(10773,-1695.6000000,97.9000000,5.2000000,0.0000000,0.0000000,135.0000000); //object(dk_cargoshp2_sfse) (1)
+	CreateDynamicObject(8077,-1691.1000000,12.2000000,6.5000000,0.0000000,0.0000000,135.0000000); //object(vgsfrates06) (1)
+	CreateDynamicObject(3578,-1703.0000000,63.1000000,3.3000000,0.0000000,0.0000000,291.0000000); //object(dockbarr1_la) (1)
+	CreateDynamicObject(3578,-1692.3000000,47.7000000,3.3000000,0.0000000,0.0000000,314.9950000); //object(dockbarr1_la) (3)
+	CreateDynamicObject(3578,-1678.6000000,39.4000000,3.3000000,0.0000000,0.0000000,340.9950000); //object(dockbarr1_la) (4)
+	CreateDynamicObject(1278,-1731.3000000,-6.9000000,16.8000000,0.0000000,0.0000000,139.9990000); //object(sub_floodlite) (1)
+	CreateDynamicObject(1278,-1740.0000000,72.4000000,16.7000000,0.0000000,0.0000000,49.9990000); //object(sub_floodlite) (2)
+	CreateDynamicObject(1278,-1704.5000000,-10.2000000,16.7000000,0.0000000,0.0000000,227.9980000); //object(sub_floodlite) (3)
+	CreateDynamicObject(1278,-1706.2000000,110.7000000,16.7000000,0.0000000,0.0000000,355.9940000); //object(sub_floodlite) (4)
+
+	// Ocean Springs Fill Station
+	CreateDynamicObject(703,708.9000200,1289.0000000,11.3000000,0.0000000,0.0000000,40.0000000); //object(sm_veg_tree7_big) (1)
+	CreateDynamicObject(705,698.0000000,1266.3000000,10.8000000,0.0000000,0.0000000,35.5000000); //object(sm_veg_tree7vbig) (1)
+	CreateDynamicObject(708,689.5999800,1296.9000000,10.7000000,0.0000000,0.0000000,310.0000000); //object(sm_veg_tree4_vbig) (1)
+	CreateDynamicObject(973,625.5999800,1269.3000000,11.5000000,0.0000000,0.0000000,206.5000000); //object(sub_roadbarrier) (1)
+	CreateDynamicObject(973,633.9000200,1273.5000000,11.5000000,0.0000000,0.0000000,206.9990000); //object(sub_roadbarrier) (2)
+	CreateDynamicObject(973,642.2000100,1277.7000000,11.5000000,0.0000000,0.0000000,206.7490000); //object(sub_roadbarrier) (3)
+	CreateDynamicObject(973,650.5000000,1281.9000000,11.5000000,0.0000000,0.0000000,206.7460000); //object(sub_roadbarrier) (4)
+	CreateDynamicObject(973,659.0999800,1282.3000000,11.5000000,0.0000000,0.0000000,158.7460000); //object(sub_roadbarrier) (5)
+	CreateDynamicObject(973,667.4000200,1278.1000000,11.5000000,0.0000000,0.0000000,147.4910000); //object(sub_roadbarrier) (6)
+	CreateDynamicObject(1554,670.7999900,1274.9000000,10.7000000,0.0000000,0.0000000,330.0000000); //object(cj_water_barrier) (1)
+	CreateDynamicObject(1554,672.0000000,1274.9000000,10.7000000,0.0000000,0.0000000,19.9960000); //object(cj_water_barrier) (2)
+	CreateDynamicObject(1554,673.0999800,1275.6000000,10.7000000,0.0000000,0.0000000,338.9960000); //object(cj_water_barrier) (3)
+	CreateDynamicObject(16337,544.9000200,1179.7000000,11.5000000,0.0000000,0.0000000,283.2480000); //object(des_cranecontrol) (1)
+	CreateDynamicObject(16337,544.9000200,1179.7000000,9.7400000,180.0000000,0.0000000,101.5900000); //object(des_cranecontrol) (2)
+	CreateDynamicObject(1215,536.7999900,1199.4000000,10.9000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (1)
+	CreateDynamicObject(1215,537.2999900,1197.5000000,10.4000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (2)
+	CreateDynamicObject(1215,537.7999900,1195.6000000,10.6000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (3)
+	CreateDynamicObject(1215,538.2999900,1193.5000000,11.2000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (4)
+	CreateDynamicObject(1215,542.0999800,1183.4000000,11.6000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (5)
+	CreateDynamicObject(1215,539.9000200,1182.2000000,11.3000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (6)
+	CreateDynamicObject(1215,538.5999800,1180.8000000,11.0000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (7)
+	CreateDynamicObject(1215,538.2000100,1179.1000000,10.7000000,0.0000000,0.0000000,0.0000000); //object(bollardlight) (8)
+	CreateDynamicObject(3287,684.0000000,1238.6000000,15.3000000,0.0000000,0.0000000,28.0000000); //object(cxrf_oiltank) (1)
+	CreateDynamicObject(3287,678.2999900,1249.3000000,15.3000000,0.0000000,0.0000000,27.9990000); //object(cxrf_oiltank) (2)
+	CreateDynamicObject(3287,672.2999900,1260.5000000,15.3000000,0.0000000,0.0000000,27.9990000); //object(cxrf_oiltank) (3)
+	CreateDynamicObject(3287,680.7000100,1236.9000000,13.1000000,0.0000000,0.0000000,27.9990000); //object(cxrf_oiltank) (4)
+	CreateDynamicObject(3287,674.9000200,1247.5000000,13.1000000,0.0000000,0.0000000,27.9990000); //object(cxrf_oiltank) (5)
+	CreateDynamicObject(3287,668.7999900,1258.7000000,13.1000000,0.0000000,0.0000000,27.9990000); //object(cxrf_oiltank) (6)
+	CreateDynamicObject(3631,638.2000100,1229.7000000,11.3000000,0.0000000,0.0000000,210.0000000); //object(oilcrat_las) (1)
+	CreateDynamicObject(3631,638.2000100,1229.7000000,12.4400000,0.0000000,0.0000000,209.9980000); //object(oilcrat_las) (2)
+	CreateDynamicObject(2934,629.7999900,1263.6000000,12.1000000,0.0000000,0.0000000,298.7500000); //object(kmb_container_red) (1)
+	CreateDynamicObject(2935,631.0999800,1259.7000000,12.1000000,0.0000000,0.0000000,296.0000000); //object(kmb_container_yel) (1)
+	CreateDynamicObject(925,628.2999900,1224.6000000,11.7000000,0.0000000,0.0000000,16.5000000); //object(rack2) (1)
+	CreateDynamicObject(931,631.0000000,1226.1000000,11.7000000,0.0000000,0.0000000,30.0000000); //object(rack3) (1)
+	CreateDynamicObject(3287,587.9000200,1228.3000000,13.8000000,0.0000000,0.0000000,299.7490000); //object(cxrf_oiltank) (7)
+	CreateDynamicObject(16112,656.2000100,1184.7000000,2.1000000,0.0000000,0.0000000,310.0000000); //object(des_rockfl1_) (1)
+	CreateDynamicObject(3241,590.4000200,1185.3000000,11.2000000,0.0000000,0.0000000,284.9960000); //object(conhoos2) (1)
+	CreateDynamicObject(700,577.2999900,1168.7000000,10.9000000,0.0000000,0.0000000,174.9980000); //object(sm_veg_tree6) (1)
+	CreateDynamicObject(700,568.2000100,1169.2000000,11.0000000,0.0000000,0.0000000,269.7460000); //object(sm_veg_tree6) (2)
+	CreateDynamicObject(669,557.7000100,1166.2000000,10.9000000,0.0000000,0.0000000,307.9990000); //object(sm_veg_tree4) (1)
+	CreateDynamicObject(669,548.7000100,1154.4000000,11.8000000,0.0000000,0.0000000,210.9970000); //object(sm_veg_tree4) (2)
+	CreateDynamicObject(669,567.4000200,1156.1000000,11.9000000,0.0000000,0.0000000,260.9920000); //object(sm_veg_tree4) (3)
+	CreateDynamicObject(9131,554.5999800,1185.2000000,12.2000000,0.0000000,0.0000000,20.0000000); //object(shbbyhswall13_lvs) (1)
+	CreateDynamicObject(9131,560.9000200,1187.3000000,12.2000000,0.0000000,0.0000000,18.2450000); //object(shbbyhswall13_lvs) (2)
+	CreateDynamicObject(9131,567.0000000,1189.2000000,12.2000000,0.0000000,0.0000000,15.9910000); //object(shbbyhswall13_lvs) (3)
+
+	// Ocean Springs Gasstation
+	CreateDynamicObject(3255,575.9000200,1633.8000000,6.6000000,0.0000000,0.0000000,123.5000000); //object(ref_oiltank01) (1)
+	CreateDynamicObject(3255,589.5000000,1642.8000500,6.6000000,0.0000000,0.0000000,123.5000000); //object(ref_oiltank01) (2)
+	CreateDynamicObject(3287,600.7999900,1652.5000000,10.7000000,0.0000000,0.0000000,244.5000000); //object(cxrf_oiltank) (1)
+	CreateDynamicObject(3287,607.7000100,1649.2000000,10.7000000,0.0000000,0.0000000,244.4950000); //object(cxrf_oiltank) (2)
+	CreateDynamicObject(1215,653.0000000,1748.1000000,4.8000000,0.0000000,0.0000000,20.0000000); //object(bollardlight) (1)
+	CreateDynamicObject(1215,650.7999900,1747.8000000,4.7000000,0.0000000,0.0000000,19.9950000); //object(bollardlight) (2)
+	CreateDynamicObject(1215,648.2999900,1748.5000000,4.6000000,0.0000000,0.0000000,9.9950000); //object(bollardlight) (3)
+	CreateDynamicObject(1215,632.4000200,1736.9000000,4.9000000,0.0000000,0.0000000,9.9920000); //object(bollardlight) (4)
+	CreateDynamicObject(1215,633.0999800,1735.0000000,5.1000000,0.0000000,0.0000000,9.9920000); //object(bollardlight) (5)
+	CreateDynamicObject(1215,632.2999900,1733.1000000,5.2000000,0.0000000,0.0000000,9.9920000); //object(bollardlight) (6)
+	CreateDynamicObject(1215,547.5000000,1665.3000000,6.5000000,0.0000000,0.0000000,9.9920000); //object(bollardlight) (7)
+	CreateDynamicObject(1215,554.9000200,1654.2000000,6.5000000,0.0000000,0.0000000,9.9920000); //object(bollardlight) (8)
+	CreateDynamicObject(1215,501.0000000,1655.1000000,13.2000000,0.0000000,0.0000000,9.9920000); //object(bollardlight) (9)
+	CreateDynamicObject(1215,500.7000100,1652.7000000,13.3000000,0.0000000,0.0000000,9.9920000); //object(bollardlight) (10)
+	CreateDynamicObject(1215,503.6000100,1650.8000000,13.1000000,0.0000000,0.0000000,9.9920000); //object(bollardlight) (11)
+	CreateDynamicObject(1215,484.7999900,1645.1000000,14.1000000,0.0000000,0.0000000,9.9920000); //object(bollardlight) (12)
+	CreateDynamicObject(1215,486.8999900,1644.3000000,14.1000000,0.0000000,0.0000000,42.4920000); //object(bollardlight) (13)
+	CreateDynamicObject(1215,489.7000100,1642.1000000,14.1000000,0.0000000,0.0000000,42.4900000); //object(bollardlight) (14)
+
+	// Hobos
+	CreateDynamicObject(3095,456.5000000,-107.6000000,997.9900500,0.0000000,0.0000000,0.0000000); //object(a51_jetdoor) (1)
+	CreateDynamicObject(3095,447.6000100,-107.6000000,997.9900500,0.0000000,0.0000000,0.0000000); //object(a51_jetdoor) (4)
+	CreateDynamicObject(3095,446.1000100,-107.5000000,997.9900500,0.0000000,0.0000000,0.2500000); //object(a51_jetdoor) (5)
+	CreateDynamicObject(3095,461.0000000,-107.6000000,998.0000000,0.0000000,90.0000000,0.0000000); //object(a51_jetdoor) (6)
+	CreateDynamicObject(3095,457.0000000,-111.7000000,998.0000000,0.0000000,90.0000000,270.0000000); //object(a51_jetdoor) (7)
+	CreateDynamicObject(3095,448.0000000,-111.7000000,998.0000000,0.0000000,90.0000000,270.0000000); //object(a51_jetdoor) (8)
+	CreateDynamicObject(3095,445.7999900,-111.7000000,998.0000000,0.0000000,90.0000000,270.0000000); //object(a51_jetdoor) (9)
+	CreateDynamicObject(3095,441.7999900,-107.5000000,998.0000000,0.0000000,90.0000000,180.0000000); //object(a51_jetdoor) (10)
+	CreateDynamicObject(3095,445.7999900,-102.9300000,998.0000000,0.0000000,90.0000000,270.0000000); //object(a51_jetdoor) (12)
+	CreateDynamicObject(3095,454.7000100,-102.9300000,998.0000000,0.0000000,90.0000000,270.0000000); //object(a51_jetdoor) (13)
+	CreateDynamicObject(3095,460.7999900,-102.9300000,998.0000000,0.0000000,90.0000000,270.0000000); //object(a51_jetdoor) (14)
+	CreateDynamicObject(3095,456.8999900,-106.0000000,995.0999800,0.0000000,90.0000000,270.0000000); //object(a51_jetdoor) (15)
+	CreateDynamicObject(3095,449.5000000,-106.0000000,995.0999800,0.0000000,90.0000000,270.0000000); //object(a51_jetdoor) (16)
+	CreateDynamicObject(3095,456.8999900,-106.4000000,994.2000100,0.0000000,90.0000000,270.0000000); //object(a51_jetdoor) (17)
+	CreateDynamicObject(3095,449.5000000,-106.4000000,994.2000100,0.0000000,90.0000000,270.0000000); //object(a51_jetdoor) (18)
+	CreateDynamicObject(2125,445.6000100,-107.4000000,998.9000200,0.0000000,0.0000000,0.0000000); //object(med_din_chair_1) (1)
+	CreateDynamicObject(2125,447.6000100,-107.4000000,998.9000200,0.0000000,0.0000000,322.5000000); //object(med_din_chair_1) (2)
+	CreateDynamicObject(2125,446.6000100,-107.4000000,998.9000200,0.0000000,0.0000000,352.4980000); //object(med_din_chair_1) (3)
+	CreateDynamicObject(2125,448.6000100,-107.4000000,998.9000200,0.0000000,0.0000000,26.4960000); //object(med_din_chair_1) (4)
+	CreateDynamicObject(2125,449.6000100,-107.4000000,998.9000200,0.0000000,0.0000000,279.4980000); //object(med_din_chair_1) (5)
+	CreateDynamicObject(2125,450.6000100,-107.4000000,998.9000200,0.0000000,0.0000000,279.4980000); //object(med_din_chair_1) (6)
+	CreateDynamicObject(2125,451.6000100,-107.4000000,998.9000200,0.0000000,0.0000000,329.4980000); //object(med_din_chair_1) (10)
+	CreateDynamicObject(2125,452.6000100,-107.4000000,998.9000200,0.0000000,0.0000000,3.4960000); //object(med_din_chair_1) (11)
+	CreateDynamicObject(2125,453.6000100,-107.4000000,998.9000200,0.0000000,0.0000000,323.4940000); //object(med_din_chair_1) (12)
+	CreateDynamicObject(2125,454.6000100,-107.4000000,998.9000200,0.0000000,0.0000000,317.4920000); //object(med_din_chair_1) (13)
+	CreateDynamicObject(2125,455.7000100,-107.4000000,998.9000200,0.0000000,0.0000000,267.4880000); //object(med_din_chair_1) (14)
+	CreateDynamicObject(2125,456.7000100,-107.4000000,998.9000200,0.0000000,0.0000000,87.4840000); //object(med_din_chair_1) (15)
+	CreateDynamicObject(2125,457.7000100,-107.4000000,998.9000200,0.0000000,0.0000000,37.4790000); //object(med_din_chair_1) (16)
+	CreateDynamicObject(1670,445.7999900,-106.3000000,999.6300000,0.0000000,0.0000000,0.0000000); //object(propcollecttable) (1)
+	CreateDynamicObject(1670,453.2000100,-106.3000000,999.6300000,0.0000000,0.0000000,222.0000000); //object(propcollecttable) (2)
+	CreateDynamicObject(2713,442.3999900,-104.0000000,998.7000100,0.0000000,0.0000000,258.2500000); //object(cj_bucket) (1)
+	CreateDynamicObject(2700,442.2999900,-106.3000000,1001.7000000,0.0000000,0.0000000,0.0000000); //object(cj_sex_tv2) (1)
+	CreateDynamicObject(2417,446.7000100,-104.0000000,998.5000000,0.0000000,0.0000000,0.0000000); //object(cj_ff_cooker) (1)
+	CreateDynamicObject(2415,445.8999900,-104.3000000,998.5000000,0.0000000,0.0000000,0.0000000); //object(cj_ff_fryer) (1)
+	CreateDynamicObject(2360,448.0000000,-104.1000000,998.5000000,0.0000000,0.0000000,0.0000000); //object(cj_ice_fridge_2) (1)
+	CreateDynamicObject(2344,446.6000100,-106.3000000,999.6389800,0.0000000,0.0000000,217.0000000); //object(cj_remote) (1)
+	CreateDynamicObject(2340,450.0000000,-104.1000000,998.5000000,0.0000000,0.0000000,0.0000000); //object(cj_kitch2_washer) (1)
+	CreateDynamicObject(2340,451.0000000,-104.1000000,998.5000000,0.0000000,0.0000000,0.0000000); //object(cj_kitch2_washer) (2)
+	CreateDynamicObject(2340,452.0000000,-104.1000000,998.5000000,0.0000000,0.0000000,0.0000000); //object(cj_kitch2_washer) (3)
+	CreateDynamicObject(2149,449.8999900,-104.0000000,999.7000100,0.0000000,0.0000000,14.0000000); //object(cj_microwave1) (2)
+	CreateDynamicObject(1951,447.5000000,-106.2000000,999.7999900,0.0000000,0.0000000,340.0000000); //object(kb_beer01) (1)
+	CreateDynamicObject(1668,450.3999900,-106.3000000,999.7999900,0.0000000,0.0000000,50.0000000); //object(propvodkabotl1) (1)
+	CreateDynamicObject(1667,447.7999900,-106.4000000,999.7000100,0.0000000,0.0000000,0.0000000); //object(propwineglass1) (1)
+	CreateDynamicObject(1455,450.2000100,-106.4000000,999.7000100,0.0000000,0.0000000,0.0000000); //object(dyn_glass) (1)
+	CreateDynamicObject(2418,453.8999900,-104.1000000,998.5000000,0.0000000,0.0000000,0.0000000); //object(cj_ff_worktop) (1)
+	CreateDynamicObject(2114,460.6000100,-105.7000000,998.7000100,0.0000000,0.0000000,0.0000000); //object(basketball) (1)
+	CreateDynamicObject(3963,461.0000000,-109.6000000,1000.3000000,0.0000000,0.0000000,89.0000000); //object(lee_plane08) (1)
+	CreateDynamicObject(2426,456.2000100,-103.8000000,999.4500100,0.0000000,0.0000000,0.0000000); //object(cj_ff_pizza_oven) (1)
+	CreateDynamicObject(2418,455.7999900,-104.1000000,998.5000000,0.0000000,0.0000000,0.0000000); //object(cj_ff_worktop) (2)
+	CreateDynamicObject(2683,455.2000100,-106.3000000,999.7200300,0.0000000,0.0000000,0.0000000); //object(pizza_s_p) (1)
+	CreateDynamicObject(1370,459.2999900,-104.0000000,999.0999800,0.0000000,0.0000000,260.0000000); //object(cj_flame_drum) (1)
+	CreateDynamicObject(2900,460.3999900,-104.2000000,998.5000000,0.0000000,0.0000000,0.0000000); //object(temp_cardbox) (2)
+	CreateDynamicObject(1235,460.5000000,-107.5000000,999.0000000,0.0000000,0.0000000,30.0000000); //object(wastebin) (1)
+	CreateDynamicObject(2245,449.7000100,-110.5000000,999.5999800,0.0000000,0.0000000,40.0000000); //object(plant_pot_11) (1)
+	CreateDynamicObject(2011,460.5000000,-111.1000000,998.5000000,0.0000000,0.0000000,24.0000000); //object(nu_plant2_ofc) (1)
+
+	// Hobos
+	CreateDynamicPickup(1239, 1, 875.9323, -968.3762, 37.1875);
+	CreateDynamicPickup(1239, 1, 458.8982, -110.7152, 999.5454);
+	CreateDynamicPickup(1582, 1, 458.5027, -107.3624, 999.5454);
+
+	// Hobos
+	CreateActor(168, 458.3746, -105.2684, 999.5454, 181.9454);
+
+	// Hobos
+	HoboMenu = CreateMenu("Food", 2, 5, 180, 200, 150);
+	SetMenuColumnHeader(HoboMenu, 0, "Menu");
+	SetMenuColumnHeader(HoboMenu, 1, "Price");
+	AddMenuItem(HoboMenu, 0, "Little Hobo");
+	AddMenuItem(HoboMenu, 1, "$6");
+	AddMenuItem(HoboMenu, 0, "Vegan Hobo w/ Salad");
+	AddMenuItem(HoboMenu, 1, "$8");
+	AddMenuItem(HoboMenu, 0, "Road Kill w/ Sauce");
+	AddMenuItem(HoboMenu, 1, "$10");
+	AddMenuItem(HoboMenu, 0, "Shopping Cart Fire");
+	AddMenuItem(HoboMenu, 1, "$14");
+	AddMenuItem(HoboMenu, 0, "Everything from something");
+	AddMenuItem(HoboMenu, 1, "$20");
+
+
 	for(new i = 0; i < sizeof(TravelPos); i++) {
 		if(TravelPos[i][Type] == 1) { // Train
 			CreateDynamicPickup(1239, 1, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ]);
-			CreateDynamic3DTextLabel("{9A2D25}Train Station{EEEE00}\nTicket price: $45\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
+			CreateDynamic3DTextLabel("{9A2D25}Train Travel{EEEE00}\nTicket price: $45\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
 		} else if(TravelPos[i][Type] == 2) { // Boat
 			CreateDynamicPickup(1239, 1, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ]);
 			CreateDynamic3DTextLabel("{9A2D25}Boat Travel{EEEE00}\nTicket price: $45\nUsage: /travel", COLOR_YELLOW, TravelPos[i][tX], TravelPos[i][tY], TravelPos[i][tZ], 15.0);
@@ -701,6 +971,59 @@ public OnPlayerConnect(playerid)
 	LogIn[playerid] = 0;
 	DamageTimer[playerid] = -1;
 
+	Health[playerid] = CreatePlayerTextDraw(playerid, 576.163940, 66.470344, "100");
+	PlayerTextDrawLetterSize(playerid, Health[playerid], 0.308001, 0.939999);
+	PlayerTextDrawAlignment(playerid, Health[playerid], 2);
+	PlayerTextDrawColor(playerid, Health[playerid], -1);
+	PlayerTextDrawSetShadow(playerid, Health[playerid], 0);
+	PlayerTextDrawSetOutline(playerid, Health[playerid], 1);
+	PlayerTextDrawBackgroundColor(playerid, Health[playerid], 255);
+	PlayerTextDrawFont(playerid, Health[playerid], 1);
+	PlayerTextDrawSetProportional(playerid, Health[playerid], 1);
+	PlayerTextDrawSetShadow(playerid, Health[playerid], 0);
+
+	Armour[playerid] = CreatePlayerTextDraw(playerid, 576.263916, 44.600318, "100");
+	PlayerTextDrawLetterSize(playerid, Armour[playerid], 0.308001, 0.939999);
+	PlayerTextDrawAlignment(playerid, Armour[playerid], 2);
+	PlayerTextDrawColor(playerid, Armour[playerid], -1);
+	PlayerTextDrawSetShadow(playerid, Armour[playerid], 0);
+	PlayerTextDrawSetOutline(playerid, Armour[playerid], 1);
+	PlayerTextDrawBackgroundColor(playerid, Armour[playerid], 255);
+	PlayerTextDrawFont(playerid, Armour[playerid], 1);
+	PlayerTextDrawSetProportional(playerid, Armour[playerid], 1);
+	PlayerTextDrawSetShadow(playerid, Armour[playerid], 0);
+
+	TextDrawHideForPlayer(playerid, Clock);
+	PlayerTextDrawHide(playerid, Health[playerid]);
+	PlayerTextDrawHide(playerid, Armour[playerid]);
+
+	// SF Hafen
+	RemoveBuildingForPlayer(playerid, 10914, -1706.4766, 13.0156, 7.4063, 0.25);
+	RemoveBuildingForPlayer(playerid, 1278, -1706.2891, -7.0781, 16.5313, 0.25);
+	RemoveBuildingForPlayer(playerid, 1411, -1660.4844, -6.5391, 4.0313, 0.25);
+	RemoveBuildingForPlayer(playerid, 1411, -1656.7578, -10.2656, 4.0313, 0.25);
+	RemoveBuildingForPlayer(playerid, 1411, -1667.9297, 0.9063, 4.0313, 0.25);
+	RemoveBuildingForPlayer(playerid, 1411, -1664.2031, -2.8125, 4.0313, 0.25);
+	RemoveBuildingForPlayer(playerid, 10831, -1706.4766, 13.0156, 7.4063, 0.25);
+	RemoveBuildingForPlayer(playerid, 1411, -1674.6953, 7.6875, 4.0313, 0.25);
+	RemoveBuildingForPlayer(playerid, 1411, -1678.3750, 11.3594, 4.0313, 0.25);
+	RemoveBuildingForPlayer(playerid, 966, -1676.2578, 4.6563, 2.5156, 0.25);
+	RemoveBuildingForPlayer(playerid, 968, -1676.2266, 4.6250, 3.2422, 0.25);
+	RemoveBuildingForPlayer(playerid, 967, -1674.9609, 5.5547, 2.5156, 0.25);
+	RemoveBuildingForPlayer(playerid, 1278, -1706.1172, 33.1641, 16.6172, 0.25);
+	RemoveBuildingForPlayer(playerid, 10773, -1711.0234, 65.1250, 5.5156, 0.25);
+
+	// Ampeln
+	RemoveBuildingForPlayer(playerid, 3855, 0.0, 0.0, 0.0, 3000.0);
+	RemoveBuildingForPlayer(playerid, 1283, 0.0, 0.0, 0.0, 3000.0);
+	RemoveBuildingForPlayer(playerid, 3516, 0.0, 0.0, 0.0, 3000.0);
+	RemoveBuildingForPlayer(playerid, 1315, 0.0, 0.0, 0.0, 3000.0);
+	RemoveBuildingForPlayer(playerid, 1350, 0.0, 0.0, 0.0, 3000.0);
+	RemoveBuildingForPlayer(playerid, 1351, 0.0, 0.0, 0.0, 3000.0);
+	RemoveBuildingForPlayer(playerid, 1284, 0.0, 0.0, 0.0, 3000.0);
+
+	OneSecond[playerid] = SetTimerEx("OneSecondTimer", 1000, 1, "i", playerid);
+
 	GetPlayerName(playerid, Name[playerid], MAX_PLAYER_NAME);
 	SetSpawnInfo(playerid, 0, 0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0);
 	mysql_format(handler, Query, sizeof(Query), "SELECT * FROM `Player` WHERE `Name` = '%e'", Name[playerid]);
@@ -734,12 +1057,14 @@ public OnPlayerSpawn(playerid)
 		SetPlayerSkin(playerid, randomSkins[Pos][pSkin]);
 		pInfo[playerid][Skin] = randomSkins[Pos][pSkin];
 		FirstLogin[playerid] = 0;
+		TextDrawShowForPlayer(playerid, Clock);
 	} else if(LogIn[playerid] == 1) {
 		SetPlayerPos(playerid, pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
 		SetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
 		SetPlayerSkin(playerid, pInfo[playerid][Skin]);
 		SetPlayerFightingStyle(playerid, pInfo[playerid][FightStyle]);
 		LogIn[playerid] = 0;
+		TextDrawShowForPlayer(playerid, Clock);
 	} else {
 		for(new i = 0; i < sizeof(randomSpawn); i++) {
 			if(randomSpawn[i][rsID] == pInfo[playerid][fsID]) {
@@ -749,12 +1074,17 @@ public OnPlayerSpawn(playerid)
 		}
 		SetPlayerSkin(playerid, pInfo[playerid][Skin]);
 		SetPlayerFightingStyle(playerid, pInfo[playerid][FightStyle]);
+		TextDrawShowForPlayer(playerid, Clock);
 	}
 	return 1;
 }
 
 public OnPlayerDeath(playerid, killerid, reason)
 {
+	TextDrawHideForPlayer(playerid, Clock);
+	PlayerTextDrawHide(playerid, Health[playerid]);
+	PlayerTextDrawHide(playerid, Armour[playerid]);
+	HideMenuForPlayer(HoboMenu, playerid);
 	return 1;
 }
 
@@ -858,11 +1188,96 @@ public OnVehicleRespray(playerid, vehicleid, color1, color2)
 
 public OnPlayerSelectedMenuRow(playerid, row)
 {
-	return 1;
+	new Float:pHealth;
+	GetPlayerHealth(playerid, pHealth);
+	if(GetPlayerMenu(playerid) == HoboMenu) {
+		if(row == 0) {
+			if(pHealth > 110) {
+				SendClientMessage(playerid, COLOR_GREY, "You have enough health!");
+				TogglePlayerControllable(playerid, 1);
+				return 1;
+			}
+			if(GetPlayerMoney(playerid) < 6) {
+				SendClientMessage(playerid, COLOR_GREY, "You don't have enough money!");
+				TogglePlayerControllable(playerid, 1);
+				return 1;
+			}
+			SetPlayerHealth(playerid, pHealth+40);
+			GivePlayerMoney(playerid, -6);
+			SendClientMessage(playerid, COLOR_YELLOW, "You have bought Little Hobo for $6!");
+			HideMenuForPlayer(HoboMenu, playerid);
+			TogglePlayerControllable(playerid, 1);
+		} else if(row == 1) {
+			if(pHealth > 90) {
+				SendClientMessage(playerid, COLOR_GREY, "You have enough health!");
+				TogglePlayerControllable(playerid, 1);
+				return 1;
+			}
+			if(GetPlayerMoney(playerid) < 8) {
+				SendClientMessage(playerid, COLOR_GREY, "You don't have enough money!");
+				TogglePlayerControllable(playerid, 1);
+				return 1;
+			}
+			SetPlayerHealth(playerid, pHealth+60);
+			GivePlayerMoney(playerid, -8);
+			SendClientMessage(playerid, COLOR_YELLOW, "You have bought Vegan Hobo with Salad for $8!");
+			HideMenuForPlayer(HoboMenu, playerid);
+			TogglePlayerControllable(playerid, 1);
+		} else if(row == 2) {
+			if(pHealth > 65) {
+				SendClientMessage(playerid, COLOR_GREY, "You have enough health!");
+				TogglePlayerControllable(playerid, 1);
+				return 1;
+			}
+			if(GetPlayerMoney(playerid) < 10) {
+				SendClientMessage(playerid, COLOR_GREY, "You don't have enough money!");
+				TogglePlayerControllable(playerid, 1);
+				return 1;
+			}
+			SetPlayerHealth(playerid, pHealth+85);
+			GivePlayerMoney(playerid, -10);
+			SendClientMessage(playerid, COLOR_YELLOW, "You have bought Vegan Road Kill with Sauce for $10!");
+			HideMenuForPlayer(HoboMenu, playerid);
+			TogglePlayerControllable(playerid, 1);
+		} else if(row == 3) {
+			if(pHealth > 45) {
+				SendClientMessage(playerid, COLOR_GREY, "You have enough health!");
+				TogglePlayerControllable(playerid, 1);
+				return 1;
+			}
+			if(GetPlayerMoney(playerid) < 14) {
+				SendClientMessage(playerid, COLOR_GREY, "You don't have enough money!");
+				TogglePlayerControllable(playerid, 1);
+				return 1;
+			}
+			SetPlayerHealth(playerid, pHealth+105);
+			GivePlayerMoney(playerid, -14);
+			SendClientMessage(playerid, COLOR_YELLOW, "You have bought Shopping Cart Fire for $14!");
+			HideMenuForPlayer(HoboMenu, playerid);
+			TogglePlayerControllable(playerid, 1);
+		} else if(row == 4) {
+			if(pHealth > 10) {
+				SendClientMessage(playerid, COLOR_GREY, "You have enough health!");
+				TogglePlayerControllable(playerid, 1);
+				return 1;
+			}
+			if(GetPlayerMoney(playerid) < 20) {
+				SendClientMessage(playerid, COLOR_GREY, "You don't have enough money!");
+				TogglePlayerControllable(playerid, 1);
+				return 1;
+			}
+			SetPlayerHealth(playerid, pHealth+140);
+			GivePlayerMoney(playerid, -20);
+			SendClientMessage(playerid, COLOR_YELLOW, "You have bought Everything from something for $20!");
+			HideMenuForPlayer(HoboMenu, playerid);
+			TogglePlayerControllable(playerid, 1);
+		}
+	}	return 1;
 }
 
 public OnPlayerExitedMenu(playerid)
 {
+	TogglePlayerControllable(playerid, 1);
 	return 1;
 }
 
@@ -1044,7 +1459,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			} else if(TravelPos[travID][Type] == 2) {
 				if(strcmp(inputtext, "Nearest Airport") && strcmp(inputtext, "Nearest Train Station")) {
-					if(travelID > 38) travelID = (travelID -26);
+					if(travelID > 39) travelID = (travelID -27);
 					SetPlayerPos(playerid, TravelPos[travelID][tDX], TravelPos[travelID][tDY], TravelPos[travelID][tDZ]);
 					SetPlayerFacingAngle(playerid, TravelPos[travelID][tDA]);
 				} else if(!strcmp(inputtext, "Nearest Airport")) {
@@ -1058,7 +1473,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 			} else if(TravelPos[travID][Type] == 3) {
 				if(strcmp(inputtext, "Nearest Harbour") && strcmp(inputtext, "Nearest Train Station")) {
-					if(travelID > 43) travelID = (travelID -5);
+					if(travelID > 46) travelID = (travelID -7);
 					SetPlayerPos(playerid, TravelPos[travelID][tDX], TravelPos[travelID][tDY], TravelPos[travelID][tDZ]);
 					SetPlayerFacingAngle(playerid, TravelPos[travelID][tDA]);
 					} else if(!strcmp(inputtext, "Nearest Harbour")) {
@@ -1271,6 +1686,70 @@ public ShowPlayerVehicles(playerid, garageid) {
 	return 1;
 }
 
+public OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart) {
+	if(issuerid != INVALID_PLAYER_ID) {
+		pInfo[playerid][dTimer] = 1;
+		DamageTimer[playerid] = SetTimerEx("ResetDamageTimer", 15000, 0, "i", playerid);
+	}	return 1;
+}
+
+public ResetDamageTimer(playerid) {
+	pInfo[playerid][dTimer] = 0;
+	return 1;
+}
+
+public UpdateClock() {
+	new clockString[6];
+	TimeMinute = TimeMinute+1;
+	if(TimeMinute == 60) {
+		TimeMinute = 0;
+		TimeHour ++;
+	}
+	if(TimeHour == 24) TimeHour = 0;
+	SetWorldTime(TimeHour);
+	if(TimeHour < 10 && TimeMinute < 10) format(clockString, 6, "0%d:0%d", TimeHour, TimeMinute);
+	if(TimeHour > 9 && TimeMinute < 10) format(clockString, 6, "%d:0%d", TimeHour, TimeMinute);
+	if(TimeHour < 10 && TimeMinute > 9) format(clockString, 6, "0%d:%d", TimeHour, TimeMinute);
+	if(TimeHour > 9 && TimeMinute > 9) format(clockString, 6, "%d:%d", TimeHour, TimeMinute);
+	TextDrawSetString(Clock, clockString);
+	return 1;
+}
+
+public OneSecondTimer(playerid) {
+	new Float:pHealth, Float:pArmour, HealthString[4], ArmourString[4];
+	GetPlayerHealth(playerid, pHealth);
+	GetPlayerArmour(playerid, pArmour);
+	format(HealthString, 4, "%.0f", pHealth);
+	format(ArmourString, 4, "%.0f", pArmour);
+	PlayerTextDrawSetString(playerid, Health[playerid], HealthString);
+	PlayerTextDrawSetString(playerid, Armour[playerid], ArmourString);
+	if(pHealth > 0) PlayerTextDrawShow(playerid, Health[playerid]);
+	else PlayerTextDrawHide(playerid, Health[playerid]);
+	if(pArmour > 0) PlayerTextDrawShow(playerid, Armour[playerid]);
+	else PlayerTextDrawHide(playerid, Armour[playerid]);
+	return 1;
+}
+
+public RespawnPlayer(playerid, Float:X, Float:Y, Float:Z) {
+	if(!IsPlayerInRangeOfPoint(playerid, 3.0, X, Y, Z)) return SendClientMessage(playerid, COLOR_GREY, "Your respawn was canceled because you have moved from your position!");
+	if(pInfo[playerid][dTimer] != 0) return SendClientMessage(playerid, COLOR_GREY, "You took damage, you can't teleport now!");
+	if(GetPlayerMoney(playerid) < 300) return SendClientMessage(playerid, COLOR_GREY, "You don't have enough money to respawn!");
+	for(new i = 0; i < sizeof(randomSpawn); i++) {
+		if(pInfo[playerid][fsID] == randomSpawn[i][rsID]) {
+			SetPlayerPos(playerid, randomSpawn[i][spawnX], randomSpawn[i][spawnY], randomSpawn[i][spawnZ]);
+			SetPlayerFacingAngle(playerid, randomSpawn[i][spawnA]);
+			GivePlayerMoney(playerid, -300);
+			SendClientMessage(playerid, COLOR_YELLOW, "You have been successfully respawned, you had to pay $300!");
+		}
+	}
+	return 1;
+}
+
+public Unfreeze(playerid) {
+	TogglePlayerControllable(playerid, 1);
+	return 1;
+}
+
 stock GetVehicleType(modelid) {
 	switch(modelid)	{
 		case 417,425,447,469,487,488,497,548,563: { return 2; }				// 	Helicopters
@@ -1351,17 +1830,5 @@ stock AdminLog(command[], parameters[] = '-', name[], target[] = '-', time[]) {
 	if(!strcmp(parameters, "'-'")) mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('%e', '%e', '%e', '%e')", command, name, target, time);
 	else mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('%e %e', '%e', '%e', '%e')", command, parameters, name, target, time);
 	mysql_query(handler, Query);
-	return 1;
-}
-
-public OnPlayerTakeDamage(playerid, issuerid, Float:amount, weaponid, bodypart) {
-	if(issuerid != INVALID_PLAYER_ID) {
-		pInfo[playerid][dTimer] = 1;
-		DamageTimer[playerid] = SetTimerEx("ResetDamageTimer", 15000, 0, "i", playerid);
-	}	return 1;
-}
-
-public ResetDamageTimer(playerid) {
-	pInfo[playerid][dTimer] = 0;
 	return 1;
 }
