@@ -171,6 +171,7 @@ forward UpdateClock();
 forward OneSecondTimer(playerid);
 forward RespawnPlayer(playerid, Float:X, Float:Y, Float:Z);
 forward Unfreeze(playerid);
+forward RestartServer();
 
 new MySQL:handler;
 new Name[MAX_PLAYER_NAME][MAX_PLAYERS];
@@ -286,6 +287,19 @@ main() {
 	print("============================================================\n");
 }
 
+// valstr fix by Slice
+stock FIX_valstr(dest[], value, bool:pack = false)
+{
+    // format can't handle cellmin properly
+    static const cellmin_value[] = !"-2147483648";
+
+    if (value == cellmin)
+        pack && strpack(dest, cellmin_value, 12) || strunpack(dest, cellmin_value, 12);
+    else
+        format(dest, 12, "%d", value), pack && strpack(dest, dest, 12);
+}
+#define valstr FIX_valstr
+
 // ----- Commands -----
 ocmd:spawn(playerid, params[]) {
 	if(pInfo[playerid][Adminlevel] < 3) return NoPermission(playerid);
@@ -308,7 +322,7 @@ ocmd:spawn(playerid, params[]) {
 ocmd:respawn(playerid) {
 	new Float:rX, Float:rY, Float:rZ;
 	if(pInfo[playerid][dTimer] != 0) return SendClientMessage(playerid, COLOR_GREY, "You can't use this command just now!");
-	if(GetPlayerMoney(playerid) < 300) return SendClientMessage(playerid, COLOR_GREY, "You don't have enough money to respawn!");
+	if(GetMoney(playerid) < 300) return SendClientMessage(playerid, COLOR_GREY, "You don't have enough money to respawn!");
 	GetPlayerPos(playerid, rX, rY, rZ);
 	SetTimerEx("RespawnPlayer", 10000, 0, "ifff", playerid, rX, rY, rZ);
 	SendClientMessage(playerid, COLOR_YELLOW, "You will respawn in 10 seconds, this cost you $300. Please stay at your current position!");
@@ -427,7 +441,11 @@ ocmd:ban(playerid, params[]) {
 
 ocmd:gmx(playerid, params[]) {
 	if(pInfo[playerid][Adminlevel] == 3) {
-		SendRconCommand("gmx");
+		for(new i = 0; i < MAX_PLAYERS; i++) {
+			if(pInfo[i][LoggedIn] == 1) SaveAccount(i);
+		}
+		SetTimer("RestartServer", 5000, 0);
+		SendClientMessageToAll(COLOR_RED, "The server will restarting in 5 seconds!");
 		return 1;
 	} return NoPermission(playerid);
 }
@@ -1258,13 +1276,13 @@ public OnPlayerSelectedMenuRow(playerid, row)
 				TogglePlayerControllable(playerid, 1);
 				return 1;
 			}
-			if(GetPlayerMoney(playerid) < 6) {
+			if(GetMoney(playerid) < 6) {
 				SendClientMessage(playerid, COLOR_GREY, "You don't have enough money!");
 				TogglePlayerControllable(playerid, 1);
 				return 1;
 			}
 			SetPlayerHealth(playerid, pHealth+40);
-			GivePlayerMoney(playerid, -6);
+			GiveMoney(playerid, -6);
 			SendClientMessage(playerid, COLOR_YELLOW, "You have bought Little Hobo for $6!");
 			HideMenuForPlayer(HoboMenu, playerid);
 			TogglePlayerControllable(playerid, 1);
@@ -1274,13 +1292,13 @@ public OnPlayerSelectedMenuRow(playerid, row)
 				TogglePlayerControllable(playerid, 1);
 				return 1;
 			}
-			if(GetPlayerMoney(playerid) < 8) {
+			if(GetMoney(playerid) < 8) {
 				SendClientMessage(playerid, COLOR_GREY, "You don't have enough money!");
 				TogglePlayerControllable(playerid, 1);
 				return 1;
 			}
 			SetPlayerHealth(playerid, pHealth+60);
-			GivePlayerMoney(playerid, -8);
+			GiveMoney(playerid, -8);
 			SendClientMessage(playerid, COLOR_YELLOW, "You have bought Vegan Hobo with Salad for $8!");
 			HideMenuForPlayer(HoboMenu, playerid);
 			TogglePlayerControllable(playerid, 1);
@@ -1290,13 +1308,13 @@ public OnPlayerSelectedMenuRow(playerid, row)
 				TogglePlayerControllable(playerid, 1);
 				return 1;
 			}
-			if(GetPlayerMoney(playerid) < 10) {
+			if(GetMoney(playerid) < 10) {
 				SendClientMessage(playerid, COLOR_GREY, "You don't have enough money!");
 				TogglePlayerControllable(playerid, 1);
 				return 1;
 			}
 			SetPlayerHealth(playerid, pHealth+85);
-			GivePlayerMoney(playerid, -10);
+			GiveMoney(playerid, -10);
 			SendClientMessage(playerid, COLOR_YELLOW, "You have bought Vegan Road Kill with Sauce for $10!");
 			HideMenuForPlayer(HoboMenu, playerid);
 			TogglePlayerControllable(playerid, 1);
@@ -1306,13 +1324,13 @@ public OnPlayerSelectedMenuRow(playerid, row)
 				TogglePlayerControllable(playerid, 1);
 				return 1;
 			}
-			if(GetPlayerMoney(playerid) < 14) {
+			if(GetMoney(playerid) < 14) {
 				SendClientMessage(playerid, COLOR_GREY, "You don't have enough money!");
 				TogglePlayerControllable(playerid, 1);
 				return 1;
 			}
 			SetPlayerHealth(playerid, pHealth+105);
-			GivePlayerMoney(playerid, -14);
+			GiveMoney(playerid, -14);
 			SendClientMessage(playerid, COLOR_YELLOW, "You have bought Shopping Cart Fire for $14!");
 			HideMenuForPlayer(HoboMenu, playerid);
 			TogglePlayerControllable(playerid, 1);
@@ -1322,13 +1340,13 @@ public OnPlayerSelectedMenuRow(playerid, row)
 				TogglePlayerControllable(playerid, 1);
 				return 1;
 			}
-			if(GetPlayerMoney(playerid) < 20) {
+			if(GetMoney(playerid) < 20) {
 				SendClientMessage(playerid, COLOR_GREY, "You don't have enough money!");
 				TogglePlayerControllable(playerid, 1);
 				return 1;
 			}
 			SetPlayerHealth(playerid, pHealth+140);
-			GivePlayerMoney(playerid, -20);
+			GiveMoney(playerid, -20);
 			SendClientMessage(playerid, COLOR_YELLOW, "You have bought Everything from something for $20!");
 			HideMenuForPlayer(HoboMenu, playerid);
 			TogglePlayerControllable(playerid, 1);
@@ -1501,7 +1519,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		}
 		case D_TRAVEL: {
 			if(!response) return 1;
-			if(GetPlayerMoney(playerid) < 45) return SendClientMessage(playerid, COLOR_GREY, "You don't have enough money to travel!");
+			if(GetMoney(playerid) < 45) return SendClientMessage(playerid, COLOR_GREY, "You don't have enough money to travel!");
 			new travelID = listitem+GetPVarInt(playerid, "Travel");
 			new travID = GetPVarInt(playerid, "Travel")-1;
 			if(TravelPos[travID][Type] == 1) {
@@ -1548,7 +1566,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 					}
 			}
 			SendFormMessage(playerid, COLOR_YELLOW, "You have traveled to %s and had to pay $45.", TravelPos[travelID][tsName]);
-			GivePlayerMoney(playerid, -45);
+			GiveMoney(playerid, -45);
 			DeletePVar(playerid, "Travel");
 			return 1;
 		}
@@ -1636,8 +1654,7 @@ public AccountRegister(playerid) {
 	pInfo[playerid][BanDate] = '\0';
 	pInfo[playerid][BannedBy] = '\0';
 	pInfo[playerid][LoggedIn] = 1;
-	pInfo[playerid][Money] = 500;
-	GivePlayerMoney(playerid, 500);
+	GiveMoney(playerid, 500);
 	FirstLogin[playerid] = 1;
 	SaveTimer[playerid] = SetTimerEx("SaveAccount", 300000, 1, "i", playerid);
 	SpawnPlayer(playerid);
@@ -1777,6 +1794,7 @@ public UpdateClock() {
 }
 
 public OneSecondTimer(playerid) {
+	/* Health / Armor TextDraw */
 	new Float:pHealth, Float:pArmour, HealthString[4], ArmourString[4];
 	GetPlayerHealth(playerid, pHealth);
 	GetPlayerArmour(playerid, pArmour);
@@ -1788,21 +1806,29 @@ public OneSecondTimer(playerid) {
 	else PlayerTextDrawHide(playerid, Health[playerid]);
 	if(pArmour > 0) PlayerTextDrawShow(playerid, Armour[playerid]);
 	else PlayerTextDrawHide(playerid, Armour[playerid]);
+
+	/* Anti Money-Hack */
+	if(pInfo[playerid][Money] != GetPlayerMoney(playerid)) GivePlayerMoney(playerid, -GetPlayerMoney(playerid)), GivePlayerMoney(playerid, pInfo[playerid][Money]);
 	return 1;
 }
 
 public RespawnPlayer(playerid, Float:X, Float:Y, Float:Z) {
 	if(!IsPlayerInRangeOfPoint(playerid, 3.0, X, Y, Z)) return SendClientMessage(playerid, COLOR_GREY, "Your respawn was canceled because you have moved from your position!");
 	if(pInfo[playerid][dTimer] != 0) return SendClientMessage(playerid, COLOR_GREY, "You took damage, you can't teleport now!");
-	if(GetPlayerMoney(playerid) < 300) return SendClientMessage(playerid, COLOR_GREY, "You don't have enough money to respawn!");
+	if(GetMoney(playerid) < 300) return SendClientMessage(playerid, COLOR_GREY, "You don't have enough money to respawn!");
 	for(new i = 0; i < sizeof(randomSpawn); i++) {
 		if(pInfo[playerid][fsID] == randomSpawn[i][rsID]) {
 			SetPlayerPos(playerid, randomSpawn[i][spawnX], randomSpawn[i][spawnY], randomSpawn[i][spawnZ]);
 			SetPlayerFacingAngle(playerid, randomSpawn[i][spawnA]);
-			GivePlayerMoney(playerid, -300);
+			GiveMoney(playerid, -300);
 			SendClientMessage(playerid, COLOR_YELLOW, "You have been successfully respawned, you had to pay $300!");
 		}
 	}
+	return 1;
+}
+
+public RestartServer() {
+	SendRconCommand("gmx");
 	return 1;
 }
 
@@ -1892,4 +1918,16 @@ stock AdminLog(command[], parameters[] = '-', name[], target[] = '-', time[]) {
 	else mysql_format(handler, Query, sizeof(Query), "INSERT INTO `AdminLog` (`Command`, `Admin`, `Target`, `Time`) VALUES ('%e %e', '%e', '%e', '%e')", command, parameters, name, target, time);
 	mysql_query(handler, Query);
 	return 1;
+}
+
+stock GiveMoney(playerid, amount) {
+	new namount[32];
+	valstr(namount, amount);
+	if(amount > 0) GivePlayerMoney(playerid, strval(namount)), pInfo[playerid][Money] += strval(namount);
+	else if(amount < 0) strdel(namount, strfind(namount, "-"), strfind(namount, "-")+1), GivePlayerMoney(playerid, -strval(namount)), pInfo[playerid][Money] -= strval(namount);
+	return 1;
+}
+
+stock GetMoney(playerid) {
+	return pInfo[playerid][Money];
 }

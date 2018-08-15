@@ -16,5 +16,6 @@ Incognito|Streamer include
 ITB CompuPhase|Developer of the PAWN Editor and basic includes
 pBlueG|MySQL include/plugin
 SA-MP Team|Creator of the GTA:SA based Multiplayer
+Slice|strval fix
 Whice.|Former SA-MP.org Developer
 Y\_Less|sscanf2 include/plugin
