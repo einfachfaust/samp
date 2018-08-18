@@ -4,6 +4,7 @@
 #include <streamer>
 #include <sscanf2>
 #include <timerfix>
+#include <callbacks>
 
 #define M_HOST "127.0.0.1"
 #define M_USER "samporg"
@@ -172,6 +173,7 @@ forward OneSecondTimer(playerid);
 forward RespawnPlayer(playerid, Float:X, Float:Y, Float:Z);
 forward Unfreeze(playerid);
 forward RestartServer();
+forward UnloadGuns(playerid);
 
 new MySQL:handler;
 new Name[MAX_PLAYER_NAME][MAX_PLAYERS];
@@ -188,6 +190,25 @@ new PlayerText:Health[MAX_PLAYERS];
 new PlayerText:Armour[MAX_PLAYERS];
 new OneSecond[MAX_PLAYERS];
 new Menu:HoboMenu;
+new Weapon[MAX_PLAYERS][42];
+new WeaponName[][47] = {
+	"Fist", "Brass Knuckles", "Golf Club",
+	"Nightstick", "Knife", "Baseball Bat",
+	"Shovel", "Pool Cue", "Katana",
+	"Chainsaw", "Purple Dildo", "Dildo",
+	"Vibrator", "Silver Vibrator", "Flowers",
+	"Cane", "Grenade", "Tear Gas",
+	"Molotov Cocktail", "", "",
+	"", "9mm", "Silenced 9mm",
+	"Desert Eagle", "Shotgun", "Sawnoff Shotgun",
+	"Combat Shotgun", "Micro SMG", "MP5",
+	"AK-47", "M4", "Tec-9",
+	"Country Rifle", "Sniper Rifle", "RPG",
+	"HS Rocket", "Flamethrower", "Minigun",
+	"Satchel Charge", "Detonator", "Spraycan",
+	"Fire Extinguisher", "Camera", "",
+	"", "Parachute"
+};
 enum rSp {
 	rsID,
 	Float:spawnX,
@@ -352,6 +373,18 @@ ocmd:setarmour(playerid, params[]) {
 }
 
 ocmd:setweapon(playerid, params[]) {
+	new weap, ammo, target;
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	if(sscanf(params, "uii", target, weap, ammo)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /setweapon <PlayerName/PlayerID> <WeaponID> <Ammo amount>");
+	if(!IsValidWeapon(weap)) return SendClientMessage(playerid, COLOR_GREY, "Invalid weapon id!");
+	if(ammo < 1 || ammo > 9999) return SendClientMessage(playerid, COLOR_GREY, "Invalid ammo amount!");
+	GivePlayerGun(target, weap, ammo);
+	SendFormMessage(playerid, COLOR_YELLOW, "You gave %s a weapon!", Name[target]);
+	SendFormMessage(target, COLOR_YELLOW, "%s gave you a weapon!", Name[playerid]);
+	return 1;
+}
+
+ocmd:setweapon2(playerid, params[]) {
 	new weap, ammo, target;
 	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
 	if(sscanf(params, "uii", target, weap, ammo)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /setweapon <PlayerName/PlayerID> <WeaponID> <Ammo amount>");
@@ -1137,6 +1170,7 @@ public OnPlayerSpawn(playerid)
 		pInfo[playerid][Skin] = randomSkins[Pos][pSkin];
 		FirstLogin[playerid] = 0;
 		TextDrawShowForPlayer(playerid, Clock);
+		UnloadGuns(playerid);
 	} else if(LogIn[playerid] == 1) {
 		SetPlayerPos(playerid, pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
 		SetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
@@ -1144,6 +1178,7 @@ public OnPlayerSpawn(playerid)
 		SetPlayerFightingStyle(playerid, pInfo[playerid][FightStyle]);
 		LogIn[playerid] = 0;
 		TextDrawShowForPlayer(playerid, Clock);
+		UnloadGuns(playerid);
 	} else {
 		for(new i = 0; i < sizeof(randomSpawn); i++) {
 			if(randomSpawn[i][rsID] == pInfo[playerid][fsID]) {
@@ -1154,6 +1189,7 @@ public OnPlayerSpawn(playerid)
 		SetPlayerSkin(playerid, pInfo[playerid][Skin]);
 		SetPlayerFightingStyle(playerid, pInfo[playerid][FightStyle]);
 		TextDrawShowForPlayer(playerid, Clock);
+		UnloadGuns(playerid);
 	}
 	return 1;
 }
@@ -1634,6 +1670,7 @@ public AccountLogin(playerid) {
 		pInfo[playerid][LoggedIn] = 1;
 		LogIn[playerid] = 1;
 		SaveTimer[playerid] = SetTimerEx("SaveAccount", 300000, 1, "i", playerid);
+		SetTimerEx("UnloadGuns", 250, 0, "i", playerid);
 		SpawnPlayer(playerid);
 	} else {
 		SendClientMessage(playerid, COLOR_RED, "Login unsuccessful, password is wrong!");
@@ -1795,7 +1832,7 @@ public UpdateClock() {
 
 public OneSecondTimer(playerid) {
 	/* Health / Armor TextDraw */
-	new Float:pHealth, Float:pArmour, HealthString[4], ArmourString[4];
+	new Float:pHealth, Float:pArmour, HealthString[4], ArmourString[4], Query[256];
 	GetPlayerHealth(playerid, pHealth);
 	GetPlayerArmour(playerid, pArmour);
 	format(HealthString, 4, "%.0f", pHealth);
@@ -1809,6 +1846,18 @@ public OneSecondTimer(playerid) {
 
 	/* Anti Money-Hack */
 	if(pInfo[playerid][Money] != GetPlayerMoney(playerid)) GivePlayerMoney(playerid, -GetPlayerMoney(playerid)), GivePlayerMoney(playerid, pInfo[playerid][Money]);
+	if(!IsPlayerPaused(playerid) && pInfo[playerid][LoggedIn] == 1) {
+		if(Weapon[playerid][GetPlayerWeapon(playerid)] == 0 && GetPlayerWeapon(playerid) != 0 && GetPlayerWeapon(playerid) != WEAPON_PARACHUTE) {
+			pInfo[playerid][Banned] = 1;
+			format(pInfo[playerid][BanReason], 45, "Weapon-Hack: %s", WeaponName[GetPlayerWeapon(playerid)]);
+			format(pInfo[playerid][BannedBy], 25, "System");
+			format(pInfo[playerid][BanDate], 20, "%s", currentTime(1));
+			SendFormMessageToAll(COLOR_ADMINRED, "AC: %s got banned by anti-cheat for weapon-hack (%s).", Name[playerid], WeaponName[GetPlayerWeapon(playerid)]);
+			mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`) VALUES ('Ban', '%e', 'System', 'Weapon-Hack: %e', '%e')", Name[playerid], WeaponName[GetPlayerWeapon(playerid)], currentTime(1));
+			mysql_query(handler, Query);
+			SetTimerEx("KickPlayer", 100, 0, "i", playerid);
+		}
+	}
 	return 1;
 }
 
@@ -1834,6 +1883,23 @@ public RestartServer() {
 
 public Unfreeze(playerid) {
 	TogglePlayerControllable(playerid, 1);
+	return 1;
+}
+
+public UnloadGuns(playerid) {
+	ResetPlayerWeapons(playerid);
+	for(new i = 1; i < 42; i++) Weapon[playerid][i] = 0;
+	return 1;
+}
+
+stock LoadGuns(playerid) {
+	for(new i = 1; i < 42; i++) Weapon[playerid][i] = 1;
+	return 1;
+}
+
+stock GivePlayerGun(playerid, WeapID, Ammo) {
+	Weapon[playerid][WeapID] = 1;
+	GivePlayerWeapon(playerid, WeapID, Ammo);
 	return 1;
 }
 
@@ -1930,4 +1996,49 @@ stock GiveMoney(playerid, amount) {
 
 stock GetMoney(playerid) {
 	return pInfo[playerid][Money];
+}
+
+stock IsValidWeapon(weaponid) {
+	if(weaponid == WEAPON_BRASSKNUCKLE) return 1;
+	if(weaponid == WEAPON_GOLFCLUB) return 1;
+	if(weaponid == WEAPON_NITESTICK) return 1;
+	if(weaponid == WEAPON_KNIFE) return 1;
+	if(weaponid == WEAPON_BAT) return 1;
+	if(weaponid == WEAPON_SHOVEL) return 1;
+	if(weaponid == WEAPON_POOLSTICK) return 1;
+	if(weaponid == WEAPON_KATANA) return 1;
+	if(weaponid == WEAPON_CHAINSAW) return 1;
+	if(weaponid == WEAPON_DILDO) return 1;
+	if(weaponid == WEAPON_DILDO2) return 1;
+	if(weaponid == WEAPON_VIBRATOR) return 1;
+	if(weaponid == WEAPON_VIBRATOR2) return 1;
+	if(weaponid == WEAPON_FLOWER) return 1;
+	if(weaponid == WEAPON_CANE) return 1;
+	if(weaponid == WEAPON_GRENADE) return 1;
+	if(weaponid == WEAPON_TEARGAS) return 1;
+	if(weaponid == WEAPON_MOLTOV) return 1;
+	if(weaponid == WEAPON_COLT45) return 1;
+	if(weaponid == WEAPON_SILENCED) return 1;
+	if(weaponid == WEAPON_DEAGLE) return 1;
+	if(weaponid == WEAPON_SHOTGUN) return 1;
+	if(weaponid == WEAPON_SAWEDOFF) return 1;
+	if(weaponid == WEAPON_SHOTGSPA) return 1;
+	if(weaponid == WEAPON_UZI) return 1;
+	if(weaponid == WEAPON_MP5) return 1;
+	if(weaponid == WEAPON_AK47) return 1;
+	if(weaponid == WEAPON_M4) return 1;
+	if(weaponid == WEAPON_TEC9) return 1;
+	if(weaponid == WEAPON_RIFLE) return 1;
+	if(weaponid == WEAPON_SNIPER) return 1;
+	if(weaponid == WEAPON_ROCKETLAUNCHER) return 1;
+	if(weaponid == WEAPON_HEATSEEKER) return 1;
+	if(weaponid == WEAPON_FLAMETHROWER) return 1;
+	if(weaponid == WEAPON_MINIGUN) return 1;
+	if(weaponid == WEAPON_SATCHEL) return 1;
+	if(weaponid == WEAPON_BOMB) return 1;
+	if(weaponid == WEAPON_SPRAYCAN) return 1;
+	if(weaponid == WEAPON_FIREEXTINGUISHER) return 1;
+	if(weaponid == WEAPON_CAMERA) return 1;
+	if(weaponid == WEAPON_PARACHUTE) return 1;
+	return 0;
 }
