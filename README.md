@@ -11,9 +11,12 @@ Shirobaka|Lead-Developer
 Dan|timerfix include/plugin
 Emmet\_|sscanf2 include/plugin, callbacks include
 Greg Garner|float include
+Kalcor|MapAndreas
 Kleiner Opa|ocmd include
 Incognito|Streamer include
 ITB CompuPhase|Developer of the PAWN Editor and basic includes
+Mauzen|MapAndreas
+pamdex|MapAndreas
 pBlueG|MySQL include/plugin
 SA-MP Team|Creator of the GTA:SA based Multiplayer
 Slice|strval fix

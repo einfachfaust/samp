@@ -5,6 +5,7 @@
 #include <sscanf2>
 #include <timerfix>
 #include <callbacks>
+#include <mapandreas>
 
 #define M_HOST "127.0.0.1"
 #define M_USER "samporg"
@@ -15,7 +16,7 @@ new txtstr[145];
 #define SendFormMessage(%0,%1,%2,%3) format(txtstr, 145, %2, %3) && SendClientMessage(%0, %1, txtstr)
 #define SendFormMessageToAll(%0,%1,%2) format(txtstr, 145, %1, %2) && SendClientMessageToAll(%0, txtstr)
 
-// ----- Farben -----
+// ----- Colors -----
 #define COLOR_DARKGREEN 0x00CC00FF
 #define COLOR_RED 0xFF0000FF
 #define COLOR_GREY 0x8F8F8FFF
@@ -23,6 +24,7 @@ new txtstr[145];
 #define COLOR_ADMINRED 0x8B2500FF
 #define COLOR_WHITE 0xFFFFFFFF
 #define COLOR_GREEN 0x00EE00FF
+#define COLOR_LIGHTBLUE 0x3B83BDFF
 // ------------------
 
 // ----- Defines -----
@@ -191,6 +193,12 @@ new PlayerText:Armour[MAX_PLAYERS];
 new OneSecond[MAX_PLAYERS];
 new Menu:HoboMenu;
 new Weapon[MAX_PLAYERS][42];
+new AdminRank[][15] = {
+	"Player",
+	"Supporter",
+	"Administrator",
+	"Server Owner"
+};
 new WeaponName[][47] = {
 	"Fist", "Brass Knuckles", "Golf Club",
 	"Nightstick", "Knife", "Baseball Bat",
@@ -308,10 +316,8 @@ main() {
 	print("============================================================\n");
 }
 
-// valstr fix by Slice
 stock FIX_valstr(dest[], value, bool:pack = false)
 {
-    // format can't handle cellmin properly
     static const cellmin_value[] = !"-2147483648";
 
     if (value == cellmin)
@@ -337,6 +343,7 @@ ocmd:spawn(playerid, params[]) {
 	new pSkin = random(6);
 	SetPlayerSkin(playerid, randomSkins[Pos][pSkin]);
 	pInfo[playerid][Skin] = randomSkins[Pos][pSkin];
+	AdminLog("/spawn", params, Name[playerid], "-", currentTime(1));
 	return 1;
 }
 
@@ -358,17 +365,19 @@ ocmd:sethealth(playerid, params[]) {
 	SetPlayerHealth(target, health);
 	SendFormMessage(playerid, COLOR_YELLOW, "You have setted the health of %s to %.0f", Name[target], health);
 	SendFormMessage(target, COLOR_YELLOW, "%s has setted your health to %.0f", Name[playerid], health);
+	AdminLog("/sethealth", params, Name[playerid], Name[target], currentTime(1));
 	return 1;
 }
 
 ocmd:setarmour(playerid, params[]) {
 	new target, Float:armour;
 	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
-	if(sscanf(params, "uf", target, armour)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /sethealth <PlayerName/PlayerID> <Armour>");
+	if(sscanf(params, "uf", target, armour)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /setarmour <PlayerName/PlayerID> <Armour>");
 	if(armour < 0 || armour > 255) return SendClientMessage(playerid, COLOR_GREY, "Armour have be between 0 and 255!");
 	SetPlayerArmour(target, armour);
 	SendFormMessage(playerid, COLOR_YELLOW, "You have setted the armour of %s to %.0f", Name[target], armour);
 	SendFormMessage(target, COLOR_YELLOW, "%s has setted your armour to %.0f", Name[playerid], armour);
+	AdminLog("/setarmour", params, Name[playerid], Name[target], currentTime(1));
 	return 1;
 }
 
@@ -381,18 +390,7 @@ ocmd:setweapon(playerid, params[]) {
 	GivePlayerGun(target, weap, ammo);
 	SendFormMessage(playerid, COLOR_YELLOW, "You gave %s a weapon!", Name[target]);
 	SendFormMessage(target, COLOR_YELLOW, "%s gave you a weapon!", Name[playerid]);
-	return 1;
-}
-
-ocmd:setweapon2(playerid, params[]) {
-	new weap, ammo, target;
-	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
-	if(sscanf(params, "uii", target, weap, ammo)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /setweapon <PlayerName/PlayerID> <WeaponID> <Ammo amount>");
-	if(weap < 1 || weap > 42 || weap < 22 && weap > 18) return SendClientMessage(playerid, COLOR_GREY, "Invalid weapon id!");
-	if(ammo < 1 || ammo > 9999) return SendClientMessage(playerid, COLOR_GREY, "Invalid ammo amount!");
-	GivePlayerWeapon(target, weap, ammo);
-	SendFormMessage(playerid, COLOR_YELLOW, "You gave %s a weapon!", Name[target]);
-	SendFormMessage(target, COLOR_YELLOW, "%s gave you a weapon!", Name[playerid]);
+	AdminLog("/setweapon", params, Name[playerid], Name[target], currentTime(1));
 	return 1;
 }
 
@@ -409,6 +407,34 @@ ocmd:goto(playerid, params[]) {
 		AdminLog("/goto", params, Name[playerid], Name[target], currentTime(1));
 		return 1;
 	} return NoPermission(playerid);
+}
+
+ocmd:admins(playerid, params[]) {
+	new count = 0;
+	if(pInfo[playerid][LoggedIn] == 0) return 1;
+	SendClientMessage(playerid, COLOR_GREEN, "Adminlist:");
+	for(new i = 0; i < MAX_PLAYERS; i++) {
+		if(pInfo[i][Adminlevel] < 1 || IsPlayerPaused(i)) continue;
+		SendFormMessage(playerid, COLOR_WHITE, "%s - %s [%d]", AdminRank[pInfo[i][Adminlevel]], Name[i], i);
+		count ++;
+	}
+	if(count == 0) return SendClientMessage(playerid, COLOR_WHITE, "There are no admins online!");
+	return 1;
+}
+
+ocmd:setadmin(playerid, params[]) {
+	new target, rank;
+	if(IsPlayerAdmin(playerid) && (!strcmp(Name[playerid], "Shirobaka") || !strcmp(Name[playerid], "Bobby"))) {
+		if(sscanf(params, "ui", target, rank)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /setadmin <PlayerID/PlayerName> <Rank>");
+		if(rank < 0 || rank > 3) return SendClientMessage(playerid, COLOR_GREY, "The admin-rank should be between 0 and 3"), SendClientMessage(playerid, COLOR_GREY, "0 = player, 1 = supporter, 2 = administrator, 3 = server owner");
+		if(pInfo[target][LoggedIn] == 0) return SendClientMessage(playerid, COLOR_GREY, "This player is not loggedin!");
+		if(pInfo[target][Adminlevel] == rank) return SendClientMessage(playerid, COLOR_GREY, "This player is already at this admin-level!");
+		if(rank > pInfo[target][Adminlevel]) SendFormMessage(playerid, COLOR_LIGHTBLUE, "You have promoted %s to a %s", Name[target], AdminRank[rank]), SendFormMessage(target, COLOR_LIGHTBLUE, "%s has promoted you to a %s", Name[playerid], AdminRank[rank]);
+		else  SendFormMessage(playerid, COLOR_LIGHTBLUE, "You have demoted %s to a %s", Name[target], AdminRank[rank]), SendFormMessage(target, COLOR_LIGHTBLUE, "%s has demoted you to a %s", Name[playerid], AdminRank[rank]);
+		pInfo[target][Adminlevel] = rank;
+		AdminLog("/setadmin", params, Name[playerid], Name[target], currentTime(1));
+		return 1;
+	} return 1;
 }
 
 ocmd:gotopos(playerid, params[]) {
@@ -499,13 +525,15 @@ ocmd:loadcar(playerid, params[])
 ocmd:veh(playerid, params[]) {
 	new vehicle[25], sCar, Float:X, Float:Y, Float:Z, Float:A, aVehicle, color1, color2;
 	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
-	if(sscanf(params, "s[25]dd", vehicle, color1, color2)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /veh <VehicleID/VehicleName> <Color1> <Color2>");
+	if(sscanf(params, "s[25]I(-255)I(-255)", vehicle, color1, color2)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /veh <VehicleID/VehicleName> <Color1 (optional)> <Color2 (optional)>");
+	if(color1 == -255) color1 = random(256);
+	if(color2 == -255) color2 = random(256);
 	if(!IsNumeric(vehicle)) sCar = GetVehicleModelFromName(vehicle);
 	else sCar = strval(vehicle);
 	if(sCar == -1) return SendFormMessage(playerid, COLOR_GREY, "The vehicle %s can not be found!", vehicle);
 	GetPlayerPos(playerid, X, Y, Z);
 	GetPlayerFacingAngle(playerid, A);
-	aVehicle = CreateVehicle(sCar, X, Y, Z, A, color1, color2, -1);
+	aVehicle = CreateVehicle(sCar, X, Y, Z+0.5, A, color1, color2, -1);
 	PutPlayerInVehicle(playerid, aVehicle, 0);
 	AdminLog("/veh", params, Name[playerid], "-", currentTime(1));
 	return 1;
@@ -568,6 +596,7 @@ ocmd:jetpack(playerid) {
 	if(IsPlayerInAnyVehicle(playerid)) return 1;
 	if(pInfo[playerid][Adminlevel] == 3) {
 		SetPlayerSpecialAction(playerid, SPECIAL_ACTION_USEJETPACK);
+		AdminLog("/jetpack", "-", Name[playerid], "-", currentTime(1));
 	} return NoPermission(playerid);
 }
 
@@ -785,6 +814,8 @@ public OnGameModeInit()
 	handler = mysql_connect(M_HOST, M_USER, M_PASS, M_DATA);
 	if(mysql_errno() != 0) printf("Database connection could not be established! (%d)", mysql_errno());
 	else print("Database connection successfully established!");
+
+	MapAndreas_Init(MAP_ANDREAS_MODE_FULL);
 
 	mysql_pquery(handler, "SELECT * FROM `Garages`", "LoadGarages");
 
@@ -1054,6 +1085,7 @@ public OnGameModeInit()
 public OnGameModeExit()
 {
 	mysql_close(handler);
+	MapAndreas_Unload();
 	return 1;
 }
 
@@ -1147,6 +1179,7 @@ public OnPlayerDisconnect(playerid, reason)
 {
 	KillTimer(SaveTimer[playerid]);
 	KillTimer(DamageTimer[playerid]);
+	KillTimer(OneSecond[playerid]);
 	SaveAccount(playerid);
 	pInfo[playerid][LoggedIn] = 0;
 	return 1;
@@ -1220,7 +1253,7 @@ public OnPlayerText(playerid, text[])
 
 public OnPlayerCommandText(playerid, cmdtext[])
 {
-	return 0;
+	return 1;
 }
 
 public OnPlayerEnterVehicle(playerid, vehicleid, ispassenger)
@@ -1702,10 +1735,11 @@ public SaveAccount(playerid) {
 	new Query[1024], string[256];
 	if(pInfo[playerid][LoggedIn] == 1) {
 		GetPlayerPos(playerid, pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
+		MapAndreas_FindZ_For2DCoord(pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
 		GetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
 		mysql_format(handler, string, sizeof(string), "UPDATE `Player` SET `Adminlevel` = '%d', `Money` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e', \n", pInfo[playerid][Adminlevel], pInfo[playerid][Money], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
 		strcat(Query, string);
-		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `fsID` = '%d', `FightStyle` = '%d' WHERE `id` = '%d'", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ], pInfo[playerid][posA], pInfo[playerid][fsID], pInfo[playerid][FightStyle], pInfo[playerid][id]);
+		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `fsID` = '%d', `FightStyle` = '%d' WHERE `id` = '%d'", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]+2.5, pInfo[playerid][posA], pInfo[playerid][fsID], pInfo[playerid][FightStyle], pInfo[playerid][id]);
 		strcat(Query, string);
 		mysql_query(handler, Query);
 	} return 1;
