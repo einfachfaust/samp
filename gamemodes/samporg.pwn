@@ -47,11 +47,16 @@ enum {
 enum PlayerData {
 	id,
 	Adminlevel,
+	Points,
 	Money,
 	Banned,
 	BanReason[45],
 	BanDate[20],
 	BannedBy[MAX_PLAYER_NAME+1],
+	tBanned,
+	tBanTime,
+	tBannedBy[MAX_PLAYER_NAME+1],
+	tBanReason[45],
 	Float:posX,
 	Float:posY,
 	Float:posZ,
@@ -193,6 +198,9 @@ new PlayerText:Armour[MAX_PLAYERS];
 new OneSecond[MAX_PLAYERS];
 new Menu:HoboMenu;
 new Weapon[MAX_PLAYERS][42];
+new ChatActive[MAX_PLAYERS];
+new PlayerPoints[MAX_PLAYERS];
+new PlayerPointsCount[MAX_PLAYERS];
 new AdminRank[][15] = {
 	"Player",
 	"Supporter",
@@ -483,8 +491,8 @@ ocmd:ban(playerid, params[]) {
 	new target, reason[45], Query[256];
 	if(pInfo[playerid][Adminlevel] >= 2) {
 		if(sscanf(params, "us[45]", target, reason)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /ban <PlayerName/PlayerID> <Reason>");
-		if(!IsPlayerConnected(playerid)) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
-		if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 5) return SendClientMessage(playerid, COLOR_GREY, "You are not allowed to use this command on this player!");
+		if(!IsPlayerConnected(target)) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
+		if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 3) return SendClientMessage(playerid, COLOR_GREY, "You are not allowed to use this command on this player!");
 		SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got banned by %s for %s", Name[target], Name[playerid], reason);
 		pInfo[target][Banned] = 1;
 		format(pInfo[target][BanReason], 45, "%s", reason);
@@ -496,6 +504,26 @@ ocmd:ban(playerid, params[]) {
 		SetTimerEx("KickPlayer", 50, 0, "i", playerid);
 		return 1;
 	} return NoPermission(playerid);
+}
+
+ocmd:tban(playerid, params[]) {
+	new target, time, reason[45], Query[256], curTime, hour, minute, second;
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	if(sscanf(params, "uis[45]", target, time, reason)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /tban <PlayerName/PlayerID> <Time in minutes> <Reason>");
+	if(!IsPlayerConnected(target)) return SendClientMessage(playerid, COLOR_GREY, "This Player isn't loggedin!");
+	if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 3) return SendClientMessage(playerid, COLOR_GREY, "You are not allwed to use this command on this player!");
+	time = time*60;
+	curTime = gettime(hour, minute, second);
+	pInfo[target][tBanned] = 1;
+	pInfo[target][tBanTime] = curTime+time;
+	format(pInfo[target][tBannedBy], MAX_PLAYER_NAME+1, "%s", Name[playerid]);
+	format(pInfo[target][tBanReason], 45, "%s", reason);
+	SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got banned for %d minutes, reason: %s", Name[target], (time/60), reason);
+	mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`, `Duration`) VALUES ('TimeBan', '%e', '%e', '%e', '%e', '%d')", Name[target], Name[playerid], reason, currentTime(1), (time/60));
+	mysql_query(handler, Query);
+	AdminLog("/tban", params, Name[playerid], Name[target], currentTime(1));
+	SetTimerEx("KickPlayer", 50, 0, "i", target);
+	return 1;
 }
 
 ocmd:gmx(playerid, params[]) {
@@ -597,6 +625,7 @@ ocmd:jetpack(playerid) {
 	if(pInfo[playerid][Adminlevel] == 3) {
 		SetPlayerSpecialAction(playerid, SPECIAL_ACTION_USEJETPACK);
 		AdminLog("/jetpack", "-", Name[playerid], "-", currentTime(1));
+		return 1;
 	} return NoPermission(playerid);
 }
 
@@ -1107,6 +1136,9 @@ public OnPlayerConnect(playerid)
 	MarkSaved[playerid] = 0;
 	LogIn[playerid] = 0;
 	DamageTimer[playerid] = -1;
+	ChatActive[playerid] = 0;
+	PlayerPoints[playerid] = 0;
+	PlayerPointsCount[playerid] = 0;
 
 	Health[playerid] = CreatePlayerTextDraw(playerid, 576.163940, 66.470344, "100");
 	PlayerTextDrawLetterSize(playerid, Health[playerid], 0.308001, 0.939999);
@@ -1248,7 +1280,13 @@ public OnVehicleDeath(vehicleid, killerid)
 
 public OnPlayerText(playerid, text[])
 {
-	return 1;
+	new string[128];
+	if(pInfo[playerid][LoggedIn] == 0) return 1;
+	if(ChatActive[playerid] == 1) {
+		format(string, sizeof(string), "%s says: %s", Name[playerid], text);
+		SendRadiusMessage(playerid, 0xFFFFFFFF, 0xCCCCCCFF, 0xAAAAAAFF, 0x888888FF, string);
+	}
+	return 0;
 }
 
 public OnPlayerCommandText(playerid, cmdtext[])
@@ -1666,16 +1704,35 @@ public CheckAccount(playerid) {
 		cache_get_value_name(0, "BanReason", pInfo[playerid][BanReason], 45);
 		cache_get_value_name(0, "BanDate", pInfo[playerid][BanDate], 20);
 		cache_get_value_name(0, "BannedBy", pInfo[playerid][BannedBy], MAX_PLAYER_NAME+1);
+		cache_get_value_name_int(0, "tBanned", pInfo[playerid][tBanned]);
+		cache_get_value_name_int(0, "tBanTime", pInfo[playerid][tBanTime]);
+		cache_get_value_name(0, "tBannedBy", pInfo[playerid][tBannedBy], MAX_PLAYER_NAME+1);
+		cache_get_value_name(0, "tBanReason", pInfo[playerid][tBanReason], 45);
 		if(pInfo[playerid][Banned] == 1) {
 			format(string, sizeof(string), "{FFFFFF}Welcome %s,\nunfortunately you got {FF0000}banned{FFFFFF} from our server, that means that you can't play anymore with this account.\n\nBan reason: %s\nBan date: %s\nBanned by: %s\nIf you have any questions about your ban, contact us on our teamspeak.", Name[playerid], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
 			ShowPlayerDialog(playerid, 32767, DIALOG_STYLE_MSGBOX, "SA-MP.org | Baninfo", string, "Close", "");
 			return SetTimerEx("KickPlayer", 50, 0, "i", playerid);
 		}
+		if(pInfo[playerid][tBanned] == 1) {
+			if(pInfo[playerid][tBanTime] > strval(currentTime(4))) {
+				new BanTime = floatround(((pInfo[playerid][tBanTime]-strval(currentTime(4)))/60), floatround_round);
+				format(string, sizeof(string), "{FFFFFF}Welcome %s,\nunfortunately you got {FF0000}time-banned{FFFFFF} from our server,\nyour ban will expire in %d minutes.\n\nTime-ban reason: %s\nTime-banned by: %s\nIf you have any questions about your time-ban, contact us on our teamspeak.", Name[playerid], BanTime, pInfo[playerid][tBanReason], pInfo[playerid][tBannedBy]);
+				ShowPlayerDialog(playerid, 32767, DIALOG_STYLE_MSGBOX, "SA-MP.org | Timebaninfo", string, "Close", "");
+				return SetTimerEx("KickPlayer", 50, 0, "i", playerid);
+			} else {
+				pInfo[playerid][tBanned] = 0;
+				pInfo[playerid][tBanTime] = 0;
+				pInfo[playerid][tBannedBy] = '\0';
+				pInfo[playerid][tBanReason] = '\0';
+			}
+		}
 		format(string, sizeof(string), "{FFFFFF}Welcome back %s,\nplease enter your account password.", Name[playerid]);
 		ShowPlayerDialog(playerid, D_LOGIN, DIALOG_STYLE_PASSWORD, "SA-MP.org | Login", string, "Login", "Cancel");
+		SetPlayerColor(playerid, COLOR_GREY);
 	} else {
 		format(string, sizeof(string), "{FFFFFF}Welcome %s,\nwe can't find an account with this name in the database,\nplease enter a password to register a account.", Name[playerid]);
 		ShowPlayerDialog(playerid, D_REGISTER, DIALOG_STYLE_INPUT, "SA-MP.org | Register", string, "Register", "Cancel");
+		SetPlayerColor(playerid, COLOR_GREY);
 	}
 	return 1;
 }
@@ -1700,8 +1757,12 @@ public AccountLogin(playerid) {
 		cache_get_value_name_int(0, "fsID", pInfo[playerid][fsID]);
 		cache_get_value_name_int(0, "FightStyle", pInfo[playerid][FightStyle]);
 		cache_get_value_name_int(0, "Skin", pInfo[playerid][Skin]);
+		cache_get_value_name_int(0, "Points", pInfo[playerid][Points]);
+		SetPlayerColor(playerid, COLOR_WHITE);
+		SetPlayerScore(playerid, pInfo[playerid][Points]);
 		pInfo[playerid][LoggedIn] = 1;
 		LogIn[playerid] = 1;
+		ChatActive[playerid] = 1;
 		SaveTimer[playerid] = SetTimerEx("SaveAccount", 300000, 1, "i", playerid);
 		SetTimerEx("UnloadGuns", 250, 0, "i", playerid);
 		SpawnPlayer(playerid);
@@ -1723,10 +1784,18 @@ public AccountRegister(playerid) {
 	pInfo[playerid][BanReason] = '\0';
 	pInfo[playerid][BanDate] = '\0';
 	pInfo[playerid][BannedBy] = '\0';
+	pInfo[playerid][tBanned] = 0;
+	pInfo[playerid][tBanTime] = 0;
+	pInfo[playerid][tBannedBy] = '\0';
+	pInfo[playerid][tBanReason] = '\0';
 	pInfo[playerid][LoggedIn] = 1;
+	pInfo[playerid][Points] = 175;
+	SetPlayerScore(playerid, 175);
 	GiveMoney(playerid, 500);
+	ChatActive[playerid] = 1;
 	FirstLogin[playerid] = 1;
 	SaveTimer[playerid] = SetTimerEx("SaveAccount", 300000, 1, "i", playerid);
+	SaveAccount(playerid);
 	SpawnPlayer(playerid);
 	return 1;
 }
@@ -1737,9 +1806,11 @@ public SaveAccount(playerid) {
 		GetPlayerPos(playerid, pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
 		MapAndreas_FindZ_For2DCoord(pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]);
 		GetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
-		mysql_format(handler, string, sizeof(string), "UPDATE `Player` SET `Adminlevel` = '%d', `Money` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e', \n", pInfo[playerid][Adminlevel], pInfo[playerid][Money], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
+		mysql_format(handler, string, sizeof(string), "UPDATE `Player` SET `Adminlevel` = '%d', `Points` = '%d', `Money` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e', \n", pInfo[playerid][Adminlevel], pInfo[playerid][Points], pInfo[playerid][Money], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
 		strcat(Query, string);
-		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `fsID` = '%d', `FightStyle` = '%d' WHERE `id` = '%d'", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]+2.5, pInfo[playerid][posA], pInfo[playerid][fsID], pInfo[playerid][FightStyle], pInfo[playerid][id]);
+		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `fsID` = '%d', `FightStyle` = '%d', \n", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]+2.5, pInfo[playerid][posA], pInfo[playerid][fsID], pInfo[playerid][FightStyle]);
+		strcat(Query, string);
+		mysql_format(handler, string, sizeof(string), "`tBanned` = '%d', `tBanTime` = '%d', `tBannedBy` = '%s', `tBanReason` = '%s' WHERE `id` = '%d'", pInfo[playerid][tBanned], pInfo[playerid][tBanTime], pInfo[playerid][tBannedBy], pInfo[playerid][tBanReason], pInfo[playerid][id]);
 		strcat(Query, string);
 		mysql_query(handler, Query);
 	} return 1;
@@ -1802,8 +1873,8 @@ stock NoPermission(playerid) {
 }
 
 stock currentTime(type = 1) {
-	new cTime[20], Hour, Minute, Second, Year, Month, Day, date[20], hour[10];
-	gettime(Hour, Minute, Second);
+	new cTime[20], Time, Hour, Minute, Second, Year, Month, Day, date[20], hour[10];
+	Time = gettime(Hour, Minute, Second);
 	getdate(Year, Month, Day);
 	if(type == 1) {
 		format(date, sizeof(date), "%02d.%02d.%02d", Day, Month, Year);
@@ -1815,6 +1886,8 @@ stock currentTime(type = 1) {
 	} else if(type == 3) {
 		format(date, sizeof(date), "%02d.%02d.%02d", Day, Month, Year);
 		format(cTime, sizeof(cTime), "%s", date);
+	} else if(type == 4) {
+		format(cTime, sizeof(cTime), "%d", Time);
 	} return cTime;
 }
 
@@ -1877,8 +1950,20 @@ public OneSecondTimer(playerid) {
 	else PlayerTextDrawHide(playerid, Health[playerid]);
 	if(pArmour > 0) PlayerTextDrawShow(playerid, Armour[playerid]);
 	else PlayerTextDrawHide(playerid, Armour[playerid]);
+	/////////////////////////////
 
-	/* Anti Money-Hack */
+	/* Point System */
+	PlayerPoints[playerid] += 1;
+	if(PlayerPoints[playerid] >= 900) {
+		if(PlayerPointsCount[playerid] == 0) pInfo[playerid][Points] += 25;
+		else if(PlayerPointsCount[playerid] == 1) pInfo[playerid][Points] += 27;
+		else if(PlayerPointsCount[playerid] == 2) pInfo[playerid][Points] += 30;
+		if(PlayerPointsCount[playerid] < 2) PlayerPointsCount[playerid] += 1;
+		else PlayerPointsCount[playerid] = 0;
+	}
+	//////////////////
+
+	/* Antihack */
 	if(pInfo[playerid][Money] != GetPlayerMoney(playerid)) GivePlayerMoney(playerid, -GetPlayerMoney(playerid)), GivePlayerMoney(playerid, pInfo[playerid][Money]);
 	if(!IsPlayerPaused(playerid) && pInfo[playerid][LoggedIn] == 1) {
 		if(Weapon[playerid][GetPlayerWeapon(playerid)] == 0 && GetPlayerWeapon(playerid) != 0 && GetPlayerWeapon(playerid) != WEAPON_PARACHUTE) {
@@ -1892,6 +1977,7 @@ public OneSecondTimer(playerid) {
 			SetTimerEx("KickPlayer", 100, 0, "i", playerid);
 		}
 	}
+	//////////////
 	return 1;
 }
 
@@ -2075,4 +2161,29 @@ stock IsValidWeapon(weaponid) {
 	if(weaponid == WEAPON_CAMERA) return 1;
 	if(weaponid == WEAPON_PARACHUTE) return 1;
 	return 0;
+}
+
+stock SendRadiusMessage(playerid, color1, color2, color3, color4, text[])
+{
+	new Float:playerX, Float:playerY, Float:playerZ;
+	GetPlayerPos(playerid, playerX, playerY, playerZ);
+	for(new i = 0; i < MAX_PLAYERS; i++) {
+		if(IsPlayerInRangeOfPoint(i, 10.0, playerX, playerY, playerZ)) {
+			SendClientMessage(i, color1, text);
+			continue;
+		}
+		if(IsPlayerInRangeOfPoint(i, 20.0, playerX, playerY, playerZ)) {
+			SendClientMessage(i, color2, text);
+			continue;
+		}
+		if(IsPlayerInRangeOfPoint(i, 30.0, playerX, playerY, playerZ)) {
+			SendClientMessage(i, color3, text);
+			continue;
+		}
+		if(IsPlayerInRangeOfPoint(i, 40.0, playerX, playerY, playerZ)) {
+			SendClientMessage(i, color4, text);
+			continue;
+		}
+	}
+	return 1;
 }
