@@ -57,6 +57,7 @@ enum PlayerData {
 	tBanTime,
 	tBannedBy[MAX_PLAYER_NAME+1],
 	tBanReason[45],
+	Warns,
 	Float:posX,
 	Float:posY,
 	Float:posZ,
@@ -481,6 +482,9 @@ ocmd:kick(playerid, params[]) {
 		SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got kicked by %s for %s", Name[target], Name[playerid], reason);
 		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`) VALUES ('Kick', '%e', '%e', '%e', '%e')", Name[target], Name[playerid], reason, currentTime(1));
 		mysql_query(handler, Query);
+		pInfo[target][Points] -= 15;
+		PlayerPoints[target] = 0;
+		SendFormMessage(target, COLOR_RED, "You have lost 15 points due to the kick, current Points: %d", pInfo[target][Points]);
 		AdminLog("/kick", params, Name[playerid], Name[target], currentTime(1));
 		SetTimerEx("KickPlayer", 50, 0, "i", playerid);
 		return 1;
@@ -493,13 +497,16 @@ ocmd:ban(playerid, params[]) {
 		if(sscanf(params, "us[45]", target, reason)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /ban <PlayerName/PlayerID> <Reason>");
 		if(!IsPlayerConnected(target)) return SendClientMessage(playerid, COLOR_GREY, "This player isn't loggedin!");
 		if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 3) return SendClientMessage(playerid, COLOR_GREY, "You are not allowed to use this command on this player!");
-		SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got banned by %s for %s", Name[target], Name[playerid], reason);
+		SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got banned permanently by %s, reason %s", Name[target], Name[playerid], reason);
 		pInfo[target][Banned] = 1;
 		format(pInfo[target][BanReason], 45, "%s", reason);
 		format(pInfo[target][BanDate], 20, "%s", currentTime(1));
 		format(pInfo[target][BannedBy], MAX_PLAYER_NAME+1, "%s", Name[playerid]);
 		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`) VALUES ('Ban', '%e', '%e', '%e', '%e')", Name[target], Name[playerid], reason, currentTime(1));
 		mysql_query(handler, Query);
+		pInfo[target][Points] -= 100;
+		PlayerPoints[target] = 0;
+		SendFormMessage(target, COLOR_RED, "You have lost 100 points due to the ban, current Points: %d", pInfo[target][Points]);
 		AdminLog("/ban", params, Name[playerid], Name[target], currentTime(1));
 		SetTimerEx("KickPlayer", 50, 0, "i", playerid);
 		return 1;
@@ -510,19 +517,64 @@ ocmd:tban(playerid, params[]) {
 	new target, time, reason[45], Query[256], curTime, hour, minute, second;
 	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
 	if(sscanf(params, "uis[45]", target, time, reason)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /tban <PlayerName/PlayerID> <Time in minutes> <Reason>");
-	if(!IsPlayerConnected(target)) return SendClientMessage(playerid, COLOR_GREY, "This Player isn't loggedin!");
-	if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 3) return SendClientMessage(playerid, COLOR_GREY, "You are not allwed to use this command on this player!");
+	if(!IsPlayerConnected(target)) return SendClientMessage(playerid, COLOR_GREY, "This Player is not loggedin!");
+	if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 3) return SendClientMessage(playerid, COLOR_GREY, "You are not allowed to use this command on this player!");
 	time = time*60;
 	curTime = gettime(hour, minute, second);
 	pInfo[target][tBanned] = 1;
 	pInfo[target][tBanTime] = curTime+time;
+	pInfo[target][Points] -= 45;
+	PlayerPoints[target] = 0;
 	format(pInfo[target][tBannedBy], MAX_PLAYER_NAME+1, "%s", Name[playerid]);
 	format(pInfo[target][tBanReason], 45, "%s", reason);
-	SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got banned for %d minutes, reason: %s", Name[target], (time/60), reason);
+	SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got banned for %d minutes by %s, reason: %s", Name[target], (time/60), Name[playerid], reason);
+	SendFormMessage(target, COLOR_RED, "You have lost 45 points due to the time-ban, current Points: %d", pInfo[target][Points]);
 	mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`, `Duration`) VALUES ('TimeBan', '%e', '%e', '%e', '%e', '%d')", Name[target], Name[playerid], reason, currentTime(1), (time/60));
 	mysql_query(handler, Query);
 	AdminLog("/tban", params, Name[playerid], Name[target], currentTime(1));
 	SetTimerEx("KickPlayer", 50, 0, "i", target);
+	return 1;
+}
+
+ocmd:warn(playerid, params[]) {
+	new target, reason[45], Query[256];
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	if(sscanf(params, "us[45]", target, reason)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /warn <PlayerName/PlayerID> <Reason>");
+	if(!IsPlayerConnected(target)) return SendClientMessage(playerid, COLOR_GREY, "This player is not conencted!");
+	if(pInfo[target][Adminlevel] >= pInfo[playerid][Adminlevel] && pInfo[playerid][Adminlevel] < 3) return SendClientMessage(playerid, COLOR_GREY, "You are not allowed to use this command on this player!");
+	pInfo[target][Warns] += 1;
+	pInfo[target][Points] -= 25;
+	PlayerPoints[target] = 0;
+	SendFormMessage(playerid, COLOR_ADMINRED, "You have warned %s for %s", Name[target], reason);
+	SendFormMessage(target, COLOR_ADMINRED, "You have recieved a warn by %s, reason: %s", Name[playerid], reason);
+	SendFormMessage(target, COLOR_RED, "You have lost 25 points due to this warn, current Points: %d", pInfo[target][Points]);
+	AdminLog("/warn", params, Name[playerid], Name[target], currentTime(1));
+	if(pInfo[target][Warns] >= 3) {
+		pInfo[target][Banned] = 1;
+		format(pInfo[target][BanReason], 45, "%d Warns", pInfo[target][Warns]);
+		format(pInfo[target][BanDate], 20, "%s", currentTime(1));
+		format(pInfo[target][BannedBy], MAX_PLAYER_NAME+1, "%s", Name[playerid]);
+		SendFormMessageToAll(COLOR_ADMINRED, "[ADM]: %s got banned permanently by %s, reason: 3 warns [AutoBan]", Name[target], Name[playerid]);
+		mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`) VALUES ('Warn (3 Warn-Ban)', '%e', '%e', '%e', '%e')", Name[target], Name[playerid], reason, currentTime(1));
+		mysql_query(handler, Query);
+		SetTimerEx("KickPlayer", 50, 0, "i", target);
+		return 1;
+	}
+	mysql_format(handler, Query, sizeof(Query), "INSERT INTO `PunishLog` (`Type`, `Target`, `Admin`, `Reason`, `Time`) VALUES ('Warn', '%e', '%e', '%e', '%e')", Name[target], Name[playerid], reason, currentTime(1));
+	mysql_query(handler, Query);
+	return 1;
+}
+
+ocmd:delwarn(playerid, params[]) {
+	new target;
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	if(sscanf(params, "u", target)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /delwarn <PlayerName/PlayerID>");
+	if(!IsPlayerConnected(playerid)) return SendClientMessage(playerid, COLOR_GREY, "This player is not connected!");
+	if(pInfo[target][Warns] == 0) return SendClientMessage(playerid, COLOR_GREY, "This player doesn't have any warns that can be deleted!");
+	pInfo[target][Warns] -= 1;
+	SendFormMessage(target, COLOR_ADMINRED, "[ADM]: %s has removed a warn from your account, current warnings: %d", Name[playerid], pInfo[target][Warns]);
+	SendFormMessage(playerid, COLOR_WHITE, "You have removed a warn from %s!", Name[target]);
+	AdminLog("/delwarn", params, Name[playerid], Name[target], currentTime(1));
 	return 1;
 }
 
@@ -1750,6 +1802,7 @@ public AccountLogin(playerid) {
 		cache_get_value_name(0, "BanReason", pInfo[playerid][BanReason], 45);
 		cache_get_value_name(0, "BanDate", pInfo[playerid][BanDate], 20);
 		cache_get_value_name(0, "BannedBy", pInfo[playerid][BannedBy], MAX_PLAYER_NAME+1);
+		cache_get_value_name_int(0, "Warns", pInfo[playerid][Warns]);
 		cache_get_value_name_float(0, "posX", pInfo[playerid][posX]);
 		cache_get_value_name_float(0, "posY", pInfo[playerid][posY]);
 		cache_get_value_name_float(0, "posZ", pInfo[playerid][posZ]);
@@ -1808,7 +1861,7 @@ public SaveAccount(playerid) {
 		GetPlayerFacingAngle(playerid, pInfo[playerid][posA]);
 		mysql_format(handler, string, sizeof(string), "UPDATE `Player` SET `Adminlevel` = '%d', `Points` = '%d', `Money` = '%d', `Banned` = '%d', `BanReason` = '%e', `BanDate` = '%e', `BannedBy` = '%e', \n", pInfo[playerid][Adminlevel], pInfo[playerid][Points], pInfo[playerid][Money], pInfo[playerid][Banned], pInfo[playerid][BanReason], pInfo[playerid][BanDate], pInfo[playerid][BannedBy]);
 		strcat(Query, string);
-		mysql_format(handler, string, sizeof(string), "`Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `fsID` = '%d', `FightStyle` = '%d', \n", pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]+2.5, pInfo[playerid][posA], pInfo[playerid][fsID], pInfo[playerid][FightStyle]);
+		mysql_format(handler, string, sizeof(string), "`Warns` = '%d', `Skin` = '%d', `posX` = '%.5f', `posY` = '%.5f', `posZ` = '%.5f', `posA` = '%.5f', `fsID` = '%d', `FightStyle` = '%d', \n", pInfo[playerid][Warns], pInfo[playerid][Skin], pInfo[playerid][posX], pInfo[playerid][posY], pInfo[playerid][posZ]+2.5, pInfo[playerid][posA], pInfo[playerid][fsID], pInfo[playerid][FightStyle]);
 		strcat(Query, string);
 		mysql_format(handler, string, sizeof(string), "`tBanned` = '%d', `tBanTime` = '%d', `tBannedBy` = '%s', `tBanReason` = '%s' WHERE `id` = '%d'", pInfo[playerid][tBanned], pInfo[playerid][tBanTime], pInfo[playerid][tBannedBy], pInfo[playerid][tBanReason], pInfo[playerid][id]);
 		strcat(Query, string);
@@ -1961,6 +2014,7 @@ public OneSecondTimer(playerid) {
 		if(PlayerPointsCount[playerid] < 2) PlayerPointsCount[playerid] += 1;
 		else PlayerPointsCount[playerid] = 0;
 	}
+	SetPlayerScore(playerid, pInfo[playerid][Points]);
 	//////////////////
 
 	/* Antihack */
