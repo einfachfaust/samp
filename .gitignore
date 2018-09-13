@@ -4,3 +4,4 @@ server.cfg
 server_log.txt
 crashinfo.txt
 .atom-build.json
+pawno/include/mysql_login.inc
