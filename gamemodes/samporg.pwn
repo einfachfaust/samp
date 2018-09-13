@@ -6,11 +6,7 @@
 #include <timerfix>
 #include <callbacks>
 #include <mapandreas>
-
-#define M_HOST "127.0.0.1"
-#define M_USER "samporg"
-#define M_PASS "W07oDGtwFkDt3o16"
-#define M_DATA "samporg"
+#include <mysql_login>
 
 new txtstr[145];
 #define SendFormMessage(%0,%1,%2,%3) format(txtstr, 145, %2, %3) && SendClientMessage(%0, %1, txtstr)
@@ -589,17 +585,14 @@ ocmd:gmx(playerid, params[]) {
 	} return NoPermission(playerid);
 }
 
-ocmd:loadcar(playerid, params[])
-{
-	for(new i; i < sizeof(gInfo); i++)
-	{
+ocmd:loadcar(playerid, params[]) {
+	for(new i; i < sizeof(gInfo); i++) 	{
 		if(!IsPlayerInRangeOfPoint(playerid, 3, gInfo[i][g_GarageX], gInfo[i][g_GarageY], gInfo[i][g_GarageZ])) continue;
 		new string[256];
 		mysql_format(handler, string, sizeof(string), "SELECT * FROM `Vehicles` WHERE `owner` = '%d'", pInfo[playerid][id]);
 		mysql_pquery(handler, string, "ShowPlayerVehicles", "dd", playerid, i);
 		return 1;
-	}
-	return SendClientMessage(playerid, COLOR_WHITE, "You are not at a garage.");
+	} return SendClientMessage(playerid, COLOR_WHITE, "You are not at a garage.");
 }
 
 ocmd:veh(playerid, params[]) {
