@@ -62,7 +62,10 @@ enum PlayerData {
 	FightStyle,
 	Skin,
 	LoggedIn,
-	dTimer
+	dTimer,
+	cabDuty,
+	cabAccepted,
+	cabCalled
 }
 new pInfo[MAX_PLAYERS][PlayerData];
 
@@ -198,6 +201,14 @@ new Weapon[MAX_PLAYERS][42];
 new ChatActive[MAX_PLAYERS];
 new PlayerPoints[MAX_PLAYERS];
 new PlayerPointsCount[MAX_PLAYERS];
+new raceStarted;
+new raceVeh[MAX_PLAYERS];
+new raceMembers;
+new pRace[MAX_PLAYERS];
+new sanchezRace[MAX_PLAYERS];
+new sanchezCheckpoint[MAX_PLAYERS];
+new cabFull[MAX_PLAYERS];
+new cabCount = 0;
 new AdminRank[][15] = {
 	"Player",
 	"Supporter",
@@ -857,6 +868,43 @@ ocmd:travel(playerid) {
 	} return SendClientMessage(playerid, COLOR_GREY, "You are not at a travel point!");
 }
 
+ocmd:cab(playerid, params[]) {
+	new location[32];
+	if(sscanf(params, "s", location)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /cab <Location (text) (max. 32 characters)>");
+	if(pInfo[playerid][cabCalled] != 0) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: You already ordered a Cab!");
+	if(GetPlayerMoney(playerid) < 50) {
+	    new rand = random(8);
+		if(rand == 0) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: We drive for cash, not for fluff. We ain't Welfare!");
+		if(rand == 1) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: It may suprise you, but our Cars drive with Gasoline ...");
+		if(rand == 2) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: I saw a wheelchair near Fisher's Lagoon,  maybe thats more your pricerange ");
+		if(rand == 3) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: Homie, no cash no car, it's that simple, C-O-M-P-R-E-N-D-E HOMES ?");
+		if(rand == 4) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: Next time try calling the LSPD, some of thoose dipshits even come for nothing.");
+		if(rand == 5) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: Did you ever hear about Dopalicious FM? No? They had no cash, same shit like you!");
+		if(rand == 6) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: You got some bread on you? Because i sent some pigeons your way.");
+		if(rand == 7) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: Look down fool, see your feet? What ever the answer is, try talking them into taking you to the place you want.");
+	}
+	if(cabCount == 0) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: We're really sorry but currently we do not have enough staff to satisfy your need for a Cab!");
+	pInfo[playerid][cabCalled] = 1;
+	for(new i = 0; i < GetMaxPlayers(); i++) {
+	    if(pInfo[i][cabDuty] == 1) {
+	        if(cabFull[i] == 0) SendFormMessage(playerid, COLOR_WHITE, "CAB HQ: Someone called for a Pickup in %s and wants to go to %s /cab accept to offer your Service", location);
+		}
+	}
+	return 1;
+}
+
+ocmd:cabaccept(playerid, params[]) {
+	new target;
+	if(sscanf(params, "u", target)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /cabaccept <UserID/Name>");
+	if(pInfo[playerid][cabCalled] == 0) return SendClientMessage(playerid, COLOR_GREY, "CAB HQ: We dont have any open inquiries from this person, please check again.");
+	if(pInfo[playerid][cabDuty] == 1) {
+	    if(cabFull[playerid] != 1) {
+			pInfo[playerid][cabAccepted] = target;
+		}
+	}
+	return 1;
+}
+
 ocmd:mark(playerid) {
 	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
 	GetPlayerPos(playerid, MarkPos[playerid][0], MarkPos[playerid][1], MarkPos[playerid][2]);
@@ -879,6 +927,128 @@ ocmd:reload(playerid, params[])
 {
 	if(pInfo[playerid][Adminlevel] < 3) return NoPermission(playerid);
 	ShowPlayerDialog(playerid, D_RELOAD, DIALOG_STYLE_LIST, "{FFFFFF}Systems:", "{FFFFFF}Garage", "Reload", "Close");
+	return 1;
+}
+
+ocmd:race(playerid, params[])
+{
+	new action[15];
+	if(sscanf(params,"s[15]", action)) return SendClientMessage(playerid, COLOR_GREY, "/race <start/join/quit>");
+	if(!strcmp(action,"start")) {
+		if(IsPlayerInRangeOfPoint(playerid, 5.0, -265.7031, -2177.9812, 28.9446)) {
+			if(raceStarted == -1) {
+				if(raceMembers < 4) {
+					if(pInfo[playerid][Money] >= 100) {
+						if(pRace[playerid] != -1) return SendClientMessage(playerid, COLOR_GREY, "You are already a participiant at a race.");
+						raceStarted = playerid;
+						raceVeh[playerid] = CreateVehicle(468, -277.7748, -2177.7029, 28.4339, 113.3686, -1, -1, -1, 0);
+						raceMembers = raceMembers+1;
+						pRace[playerid] = raceStarted;
+						PutPlayerInVehicle(playerid, raceVeh[playerid], 0);
+						sanchezRace[playerid] = CreateDynamicRaceCP(0, -332.6385, -2256.1865, 38.1367, -429.5818, -2260.6875, 47.8166, 10.0, -1, -1, playerid);
+						sanchezCheckpoint[playerid] = 1;
+						SendClientMessage(playerid, COLOR_YELLOW, "You started a race, it will begin in 60 seconds or when all participant places are occupied.");
+					} return SendClientMessage(playerid, COLOR_GREY, "You need at least $100 to start a race!");
+				} return SendClientMessage(playerid, COLOR_GREY, "All participant places area already occupied!");
+			} return SendClientMessage(playerid, COLOR_GREY, "Someone started already a race.");
+		}
+	} return 1;
+}
+
+public OnPlayerEnterDynamicRaceCP(playerid, checkpointid) {
+	if(checkpointid == sanchezRace[playerid]) {
+		if(sanchezCheckpoint[playerid] == 1) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -429.5818, -2260.6875, 47.8166, -534.6489, -2313.1233, 29.5453, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 2;
+		} else if(sanchezCheckpoint[playerid] == 2) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -534.6489, -2313.1233, 29.5453, -629.6445, -2433.5552, 30.3425, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 3;
+		} else if(sanchezCheckpoint[playerid] == 3) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -629.6445, -2433.5552, 30.3425, -667.6060, -2575.9375, 64.6349, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 4;
+		} else if(sanchezCheckpoint[playerid] == 4) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -667.6060, -2575.9375, 64.6349, -658.9182, -2684.8101, 105.1032, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 5;
+		} else if(sanchezCheckpoint[playerid] == 5) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -658.9182, -2684.8101, 105.1032, -708.8421, -2755.8875, 94.7633, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 6;
+		} else if(sanchezCheckpoint[playerid] == 6) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -708.8421, -2755.8875, 94.7633, -935.8189, -2845.1082, 68.4400, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 7;
+		} else if(sanchezCheckpoint[playerid] == 7) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -935.8189, -2845.1082, 68.4400, -1189.7994, -2854.2471, 67.4530, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 8;
+		} else if(sanchezCheckpoint[playerid] == 8) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -1189.7994, -2854.2471, 67.4530, -1284.5977, -2742.6299, 66.0671, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 9;
+		} else if(sanchezCheckpoint[playerid] == 9) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -1284.5977, -2742.6299, 66.0671, -1386.2001, -2631.8347, 31.0173, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 10;
+		} else if(sanchezCheckpoint[playerid] == 10) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -1386.2001, -2631.8347, 31.0173, -1557.5659, -2597.8101, 44.1591, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 11;
+		} else if(sanchezCheckpoint[playerid] == 11) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -1557.5659, -2597.8101, 44.1591, -1714.0234, -2537.8208, 9.4923, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 12;
+		} else if(sanchezCheckpoint[playerid] == 12) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -1714.0234, -2537.8208, 9.4923, -1877.1423, -2436.5889, 32.2823, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 13;
+		} else if(sanchezCheckpoint[playerid] == 13) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -1877.1423, -2436.5889, 32.2823, -1956.0688, -2342.0400, 34.0689, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 14;
+		} else if(sanchezCheckpoint[playerid] == 14) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -1956.0688, -2342.0400, 34.0689, -2081.9612, -2203.5195, 40.8912, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 15;
+		} else if(sanchezCheckpoint[playerid] == 15) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -2081.9612, -2203.5195, 40.8912, -2169.3701, -2159.4651, 49.6432, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 16;
+		} else if(sanchezCheckpoint[playerid] == 16) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -2169.3701, -2159.4651, 49.6432, -2376.0122, -2196.4431, 33.0042, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 17;
+		} else if(sanchezCheckpoint[playerid] == 17) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+			sanchezRace[playerid] = CreateDynamicRaceCP(0, -2376.0122, -2196.4431, 33.0042, -2376.0122, -2196.4431, 33.0042, 10.0, -1, -1, playerid);
+			sanchezCheckpoint[playerid] = 18;
+		} else if(sanchezCheckpoint[playerid] == 18) {
+			DestroyDynamicRaceCP(sanchezRace[playerid]);
+		}
+	}
+	return 1;
+}
+
+ocmd:setvw(playerid, params[]) {
+	new virtualworld, target;
+	if(sscanf(params, "ui", target, virtualworld)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /setvw <PlayerName/PlayerID> <Virtual World>");
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	SetPlayerVirtualWorld(target, virtualworld);
+	SendFormMessage(playerid, COLOR_WHITE, "You have set the player %s to virtual world %d", Name[target], virtualworld);
+	SendFormMessage(target, COLOR_WHITE, "You have been set to virtual world %d by %s", Name[playerid], virtualworld);
+	return 1;
+}
+
+ocmd:setint(playerid, params[]) {
+	new int, target;
+	if(sscanf(params, "ui", target, int)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /setint <PlayerName/PlayerID> <Interior>");
+	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
+	SetPlayerVirtualWorld(target, int);
+	SendFormMessage(playerid, COLOR_WHITE, "You have set the player %s to interior %d", Name[target], int);
+	SendFormMessage(target, COLOR_WHITE, "You have been set to interior %d by %s", Name[playerid], int);
 	return 1;
 }
 
@@ -907,6 +1077,9 @@ public OnGameModeInit()
 	TextDrawFont(Clock, 3);
 	TextDrawSetProportional(Clock, 1);
 	TextDrawSetShadow(Clock, 0);
+
+	raceStarted = -1;
+	raceMembers = 0;
 
 	/* Objects */
 	// HeliPad SF
@@ -1111,8 +1284,11 @@ public OnGameModeInit()
 
 	// Hobos
 	CreateDynamicPickup(1239, 1, 875.9323, -968.3762, 37.1875);
+	CreateDynamic3DTextLabel("** Hobos Express **\n'/enter' to get in", COLOR_YELLOW, 875.9323, -968.3762, 37.1875, 20.0);
 	CreateDynamicPickup(1239, 1, 458.8982, -110.7152, 999.5454);
+	CreateDynamic3DTextLabel("** Hobos Express **\n'/exit' to get out", COLOR_YELLOW, 458.8982, -110.7152, 999.5454, 20.0);
 	CreateDynamicPickup(1582, 1, 458.5027, -107.3624, 999.5454);
+	CreateDynamic3DTextLabel("** Hobos Express **\n'/buy' to order food", COLOR_YELLOW, 458.5027, -107.3624, 999.5454, 20.0);
 
 	// Hobos
 	CreateActor(168, 458.3746, -105.2684, 999.5454, 181.9454);
@@ -1184,6 +1360,9 @@ public OnPlayerConnect(playerid)
 	ChatActive[playerid] = 0;
 	PlayerPoints[playerid] = 0;
 	PlayerPointsCount[playerid] = 0;
+	pRace[playerid] = 0;
+	sanchezRace[playerid] = 0;
+	sanchezCheckpoint[playerid] = 0;
 
 	Health[playerid] = CreatePlayerTextDraw(playerid, 576.163940, 66.470344, "100");
 	PlayerTextDrawLetterSize(playerid, Health[playerid], 0.308001, 0.939999);
@@ -1919,22 +2098,48 @@ stock NoPermission(playerid) {
 }
 
 stock currentTime(type = 1) {
-	new cTime[20], Time, Hour, Minute, Second, Year, Month, Day, date[20], hour[10];
+	new cTime[20], Time, Hour, Minute, Second, date[20], hour[10];
 	Time = gettime(Hour, Minute, Second);
-	getdate(Year, Month, Day);
+	Hour = Hour+2;
+	Time = Time+7200;
 	if(type == 1) {
-		format(date, sizeof(date), "%02d.%02d.%02d", Day, Month, Year);
+		format(date, sizeof(date), "%s", tdate(Time));
 		format(hour, sizeof(hour), "%02d:%02d", Hour, Minute);
 		format(cTime, sizeof(cTime), "%s - %s", date, hour);
 	} else if(type == 2) {
 		format(hour, sizeof(hour), "%02d:%02d", Hour, Minute);
 		format(cTime, sizeof(cTime), "%s", hour);
 	} else if(type == 3) {
-		format(date, sizeof(date), "%02d.%02d.%02d", Day, Month, Year);
+		format(date, sizeof(date), "%s", tdate(Time));
 		format(cTime, sizeof(cTime), "%s", date);
 	} else if(type == 4) {
 		format(cTime, sizeof(cTime), "%d", Time);
 	} return cTime;
+}
+
+stock tdate(timestamp)
+{
+    new year=1970, day=0, month=0;
+    new days_of_month[12] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
+    new returnstring[32];
+
+    while(timestamp > 31622400) {
+        timestamp -= 31536000;
+        if ( ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0) ) timestamp -= 86400;
+        year++;
+    }
+
+    if(((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)) days_of_month[1] = 29;
+    else days_of_month[1] = 28;
+
+    while(timestamp > 86400) {
+        timestamp -= 86400, day++;
+        if(day == days_of_month[month]) day = 0, month++;
+    }
+
+    format(returnstring, 31, "%02d.%02d.%d", day+1, month+1, year);
+
+    return returnstring;
 }
 
 public ShowPlayerVehicles(playerid, garageid) {
@@ -2001,11 +2206,11 @@ public OneSecondTimer(playerid) {
 	/* Point System */
 	PlayerPoints[playerid] += 1;
 	if(PlayerPoints[playerid] >= 900) {
-		if(PlayerPointsCount[playerid] == 0) pInfo[playerid][Points] += 25;
-		else if(PlayerPointsCount[playerid] == 1) pInfo[playerid][Points] += 27;
-		else if(PlayerPointsCount[playerid] == 2) pInfo[playerid][Points] += 30;
-		if(PlayerPointsCount[playerid] < 2) PlayerPointsCount[playerid] += 1;
-		else PlayerPointsCount[playerid] = 0;
+		if(PlayerPointsCount[playerid] == 0) pInfo[playerid][Points] += 25, PlayerPoints[playerid] = 0;
+		else if(PlayerPointsCount[playerid] == 1) pInfo[playerid][Points] += 27, PlayerPoints[playerid] = 0;
+		else if(PlayerPointsCount[playerid] == 2) pInfo[playerid][Points] += 30, PlayerPoints[playerid] = 0;
+		if(PlayerPointsCount[playerid] < 2) PlayerPointsCount[playerid] += 1, PlayerPoints[playerid] = 0;
+		else PlayerPointsCount[playerid] = 0, PlayerPoints[playerid] = 0;
 	}
 	SetPlayerScore(playerid, pInfo[playerid][Points]);
 	//////////////////
