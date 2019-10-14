@@ -11,7 +11,7 @@
 new txtstr[145];
 #define SendFormMessage(%0,%1,%2,%3) format(txtstr, 145, %2, %3) && SendClientMessage(%0, %1, txtstr)
 #define SendFormMessageToAll(%0,%1,%2) format(txtstr, 145, %1, %2) && SendClientMessageToAll(%0, txtstr)
-
+#define SCM SendClientMessage
 // ----- Colors -----
 #define COLOR_DARKGREEN 0x00CC00FF
 #define COLOR_RED 0xFF0000FF
@@ -21,6 +21,7 @@ new txtstr[145];
 #define COLOR_WHITE 0xFFFFFFFF
 #define COLOR_GREEN 0x00EE00FF
 #define COLOR_LIGHTBLUE 0x3B83BDFF
+#define COLOR_BLUE 0x0000D1FF
 // ------------------
 
 // ----- Defines -----
@@ -29,6 +30,7 @@ new txtstr[145];
 #define MAX_GARAGES 100
 #undef MAX_PLAYERS
 #define MAX_PLAYERS 50
+#define MAX_SERVERCARS 300
 // -------------------
 
 // ----- Dialoge -----
@@ -37,7 +39,8 @@ enum {
 	D_REGISTER,
 	D_SHOWPLAYERVEHS,
 	D_TRAVEL,
-	D_RELOAD
+	D_RELOAD,
+	D_CAB_PRICE
 };
 // -------------------
 enum PlayerData {
@@ -65,7 +68,11 @@ enum PlayerData {
 	dTimer,
 	cabDuty,
 	cabAccepted,
-	cabCalled
+	cabCalled,
+	CabFee,
+	pJob,
+	CurrentVeh,
+	TaxiSeconds
 }
 new pInfo[MAX_PLAYERS][PlayerData];
 
@@ -101,6 +108,25 @@ enum VehicleData {
 	v_vents
 }
 new vInfo[MAX_VEHICLES][VehicleData];
+
+
+enum ServerVehicleData {
+	v_localid,
+	v_dbid,
+	v_valid,
+	v_color1,
+	v_color2,
+	v_function,
+	v_cartype,
+	Float:v_PosX,
+	Float:v_PosY,
+	Float:v_PosZ,
+	Float:v_PosR,
+	Text3D:v_3dtextlabel,
+	v_cabPrice // generell könnte diese Variable jedem Fahrzeug zugewiesem werden(sizeof ServerCar), da aber nur Fahrzeuge vom Typ "ServerCar" Taxis sind, ist dies nicht notwendig
+	
+}
+new ServerCar[MAX_SERVERCARS][ServerVehicleData];
 
 enum GarageData {
 	g_id,
@@ -181,7 +207,7 @@ forward RespawnPlayer(playerid, Float:X, Float:Y, Float:Z);
 forward Unfreeze(playerid);
 forward RestartServer();
 forward UnloadGuns(playerid);
-
+forward OneSecondTimerPublic();
 new MySQL:handler;
 new Name[MAX_PLAYER_NAME][MAX_PLAYERS];
 new SaveTimer[MAX_PLAYERS];
@@ -904,6 +930,26 @@ ocmd:cabaccept(playerid, params[]) {
 	}
 	return 1;
 }
+/*
+ocmd:cabduty(playerid, params[])
+{
+	if(pInfo[playerid][cabDuty] == 1)return SCM(playerid,COLOR_RED,"You are already On-Duty as a Cab Driver!");
+	new veh = GetPlayerVehicleID(playerid);
+	if(veh == INVALID_VEHICLE_ID) return SCM(playerid,COLOR_RED,"You are in no Vehicle!");
+	if(GetPlayerState(playerid) != PLAYER_STATE_DRIVER)return SCM(playerid,COLOR_RED,"You are not the Driver of a Vehicle!");
+    for(new i=0; i<sizeof(ServerCar); i++)
+	{
+	    if(ServerCar[i][v_valid]==1)
+	    {
+			    if(i == veh)
+			    {
+			        ShowPlayerDialog(playerid,D_CAB_PRICE,DIALOG_STYLE_INPUT,"Taxi Fee","Set your Taxi Fee ($1-$999)","Set Fee","Cancel");
+				}
+		}
+	}
+	return 1;
+}*/
+
 
 ocmd:mark(playerid) {
 	if(pInfo[playerid][Adminlevel] < 2) return NoPermission(playerid);
@@ -1080,7 +1126,15 @@ public OnGameModeInit()
 
 	raceStarted = -1;
 	raceMembers = 0;
-
+	
+	
+	for(new i=0; i<sizeof(ServerCar); i++)
+	{
+	    ServerCar[i][v_dbid]=-1;
+	    ServerCar[i][v_3dtextlabel]=Text3D:INVALID_3DTEXT_ID;
+	    ServerCar[i][v_function]=0;
+	}
+	LoadServerCars();
 	/* Objects */
 	// HeliPad SF
 	CreateDynamicObject(3934,-2228.8000000,590.2000100,50.4000000,0.0000000,0.0000000,270.0000000); //object(helipad01) (1)
@@ -1520,16 +1574,132 @@ public OnPlayerCommandText(playerid, cmdtext[])
 
 public OnPlayerEnterVehicle(playerid, vehicleid, ispassenger)
 {
+	pInfo[playerid][CurrentVeh]=vehicleid;
+	if(GetVehicleFunction(vehicleid) !=0)
+	{
+	    if(IsVehicleOccupied(vehicleid) && !ispassenger)
+	    {
+		     TogglePlayerControllable(playerid,false); // oder -Karma aber eher nicht Sinnvoll
+		     TogglePlayerControllable(playerid,true);
+		     SCM(playerid,COLOR_RED,"No Car Jacking!");
+		     return 1;
+		}
+		else
+		{
+		    if(GetPlayerMoney(playerid) <=0)
+		    {
+		       // SendClientMessage(playerid, COLOR_GREY, "Taxi Driver: Get out of here, you poor prick!");
+		       	SendClientMessage(playerid, COLOR_GREY, "Taxi Driver: Get out of here, you poor sod!");
+		       	TogglePlayerControllable(playerid,false); // oder -Karma aber eher nicht Sinnvoll
+    			TogglePlayerControllable(playerid,true);
+    			return 1;
+			}
+		}
+	}
+/*	if(GetVehicleFunction(vehicleid) !=0)
+	{
+	    if(IsVehicleOccupied(vehicleid) && !ispassenger)
+	    {
+		     TogglePlayerControllable(playerid,false); // oder -Karma aber eher nicht Sinnvoll
+		     TogglePlayerControllable(playerid,true);
+		     SCM(playerid,COLOR_RED,"No Car Jacking!");
+		     return 1;
+		}
+		ShowPlayerDialog(playerid,D_CAB_PRICE,DIALOG_STYLE_INPUT,"Taxi Fee","Set your Taxi Fee ($1-$999)","Set Fee","Cancel");
+	}*/
 	return 1;
 }
 
 public OnPlayerExitVehicle(playerid, vehicleid)
 {
+	switch(pInfo[playerid][pJob])
+	{
+	    case 1:
+	    {
+	        SetPlayerColor(playerid,-1);
+	        SCM(playerid,COLOR_GREEN,"You are now Offduty!");
+	        pInfo[playerid][pJob]=0;
+		}
+	}
+	if(GetVehicleFunction(vehicleid) != 0)
+	{
+	    switch(GetVehicleFunction(vehicleid))
+	    {
+	        case 1:
+	        {
+                new taxidriver = GetVehicleDriverID(vehicleid);
+                if(taxidriver !=-1) 
+                {
+                    if(GetPlayerJob(taxidriver) == 1)
+                    {
+                        new loopid = GetLoopIDByVehicleID(vehicleid);
+			            if(loopid !=-1)
+						{
+							new usualprice = ServerCar[loopid][v_cabPrice];
+							new seconds = pInfo[playerid][TaxiSeconds]; //automatishce rfloatorudn?
+							new Float:price = seconds/15 * usualprice +usualprice;
+							GivePlayerMoney(playerid,-floatround(price));
+							SendFormMessage(playerid,COLOR_LIGHTBLUE,"You payed %d$ for your Taxi Ride!",floatround(price));
+							
+							GivePlayerMoney(taxidriver,floatround(price));
+							SendFormMessage(taxidriver,COLOR_LIGHTBLUE,"Player %s left your Taxi! You earned $%d",GetName(playerid),floatround(price));
+						}
+					}
+				}
+	            
+	     //       GivePlayerMoney(playerid,-ServerCar[v_cabPrice] * Minute / 4
+	            //       GivePlayerMoney(playerid,-ServerCar[v_cabPrice] * Seconds / 4
+			}
+		}
+	}
 	return 1;
 }
 
 public OnPlayerStateChange(playerid, newstate, oldstate)
 {
+	if(newstate == PLAYER_STATE_DRIVER)
+	{
+	    pInfo[playerid][CurrentVeh]=GetPlayerVehicleID(playerid);
+	    
+	    switch(GetVehicleFunction(GetPlayerVehicleID(playerid)))  // hat der Spieler bereits n Job?
+	    {
+	        case 1:
+	        {
+                ShowPlayerDialog(playerid,D_CAB_PRICE,DIALOG_STYLE_INPUT,"Taxi Fee","Set your Taxi Fee ($1-$500)","Set Fee","Cancel");
+			}
+		}
+	}
+	if(oldstate == PLAYER_STATE_ONFOOT && newstate == PLAYER_STATE_PASSENGER)
+	{
+	    new vehicleid = GetPlayerVehicleID(playerid);
+	    switch(GetVehicleFunction(GetPlayerVehicleID(playerid)))
+	    {
+	        case 1:// Der Spieler steigt ins Taxi ein als Fahrgast
+	        {
+        		new taxidriver = GetVehicleDriverID(vehicleid);
+                if(taxidriver !=-1) // Der Spieler steigt ins Taxi ein, das Taxi hat einen Fahrer
+                {
+                    if(GetPlayerJob(taxidriver) == 1) // Überprüft, ob der Fahrer ein Taxifahrer ist
+                    {
+                        
+					}
+				}
+				else
+				{
+					RemovePlayerFromVehicle(playerid);
+					SCM(playerid,COLOR_RED,"There is no Driver of this Vehicle!");
+				}
+			}
+		}
+	}
+	if(newstate == PLAYER_STATE_ONFOOT && oldstate == PLAYER_STATE_PASSENGER || oldstate == PLAYER_STATE_DRIVER)
+	{
+	    
+	    //
+	//    pInfo[playerid][CurrentVeh]=INVALID_VEHICLE_ID;
+
+	    
+	}
 	return 1;
 }
 
@@ -1734,6 +1904,26 @@ public OnVehicleStreamOut(vehicleid, forplayerid)
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
 	switch(dialogid) {
+	    case D_CAB_PRICE:{
+	    if(!response) {RemovePlayerFromVehicle(playerid); return 0;}
+	    
+	    if(!IsNumeric(inputtext)){
+		SCM(playerid,COLOR_RED,"Don't use any Letters!");
+		RemovePlayerFromVehicle(playerid);return 1;}
+		
+		if(GetVehicleFunction(GetPlayerVehicleID(playerid) !=1)) return SCM(playerid,COLOR_RED,"You are in no Taxi!");
+		new fee = strval(inputtext);
+		if(fee <1 || fee > 500) return ShowPlayerDialog(playerid,D_CAB_PRICE,DIALOG_STYLE_INPUT,"Taxi Fee","Set your Taxi Fee {DF0101}($1-$500)","Set Fee","Cancel");
+		//pInfo[playerid][CabFee]=fee;
+		SendFormMessage(playerid, COLOR_YELLOW, "You have successfully set your Taxi Fee to $%d", fee);
+		SCM(playerid,COLOR_YELLOW,"You are now OnDuty as a Taxi Driver!");
+		SetPlayerColor(playerid,COLOR_YELLOW);
+		pInfo[playerid][pJob]=1;
+		new vehicleid = GetPlayerVehicleID(playerid);
+		new loopid = GetLoopIDByVehicleID(vehicleid);
+		ServerCar[loopid][v_cabPrice]=fee;
+		return 1;
+	    }
 		case D_LOGIN: {
 			if(!response) return Kick(playerid);
 			new Query[256], H_Pass[129], Salt[26];
@@ -2439,3 +2629,292 @@ stock SendRadiusMessage(playerid, color1, color2, color3, color4, text[])
 	}
 	return 1;
 }
+
+forward LoadServerCars();
+public LoadServerCars()
+{
+    new query[128];
+    format(query,sizeof(query),"SELECT * FROM `ServerCars`");
+	mysql_pquery(handler, query, "LoadServerCarsNow", "");
+	return 1;
+}
+forward LoadServerCarsNow();
+public LoadServerCarsNow()
+{
+    new rows;
+    cache_get_row_count(rows);
+	if(rows)
+	{
+	    for(new i; i<rows; i++)
+    	{
+
+	     	new idx = getFreeVID();
+	     	if(idx !=-1)
+	     	{
+		     	cache_get_value_name_int(i, "v_dbid", ServerCar[idx][v_dbid]);
+		     	cache_get_value_name_int(i, "v_cartype", ServerCar[idx][v_cartype]);
+
+		     	cache_get_value_name_float(i, "v_PosX", ServerCar[idx][v_PosX]);
+		     	cache_get_value_name_float(i, "v_PosY", ServerCar[idx][v_PosY]);
+		     	cache_get_value_name_float(i, "v_PosZ", ServerCar[idx][v_PosZ]);
+		     	cache_get_value_name_float(i, "v_PosR", ServerCar[idx][v_PosR]);
+
+			   	cache_get_value_name_int(i, "v_color1", ServerCar[idx][v_color1]);
+		     	cache_get_value_name_int(i, "v_color2", ServerCar[idx][v_color2]);
+		     	cache_get_value_name_int(i, "v_function", ServerCar[idx][v_function]);
+
+		     	cache_get_value_name_int(i, "v_valid", ServerCar[idx][v_valid]);
+				if(ServerCar[idx][v_valid] !=0)
+				{
+			   		ServerCar[idx][v_localid] = CreateVehicle(ServerCar[idx][v_cartype],ServerCar[idx][v_PosX],ServerCar[idx][v_PosY],ServerCar[idx][v_PosZ],ServerCar[idx][v_PosR],ServerCar[idx][v_color1],ServerCar[idx][v_color2],-1,0);
+			   		SetCarAttachments(idx);
+				}
+				else
+				{
+				    new string[256];
+					mysql_format(handler, string, sizeof(string), "DELETE FROM `ServerCars` WHERE `v_dbid` = '%d'", ServerCar[idx][v_dbid]);
+					mysql_pquery(handler, string, "", "");
+				}
+				
+			}
+	   	}
+	   	return 1;
+
+
+
+	}
+	return 1;
+	 // richtig ? i thin schon
+}
+
+stock SetCarAttachments(idx)
+{
+	new function = ServerCar[idx][v_function];
+	switch(function)
+	{
+	    case 1:
+	    {
+			if(ServerCar[idx][v_3dtextlabel]==Text3D:INVALID_3DTEXT_ID)
+			{
+			    ServerCar[idx][v_3dtextlabel] = Create3DTextLabel( "Taxi Company\n\nGet in to work as a Taxi Driver", COLOR_YELLOW, 0.0, 0.0, 0.0, 25.0, 0, 1 );
+		        Attach3DTextLabelToVehicle(ServerCar[idx][v_3dtextlabel],ServerCar[idx][v_localid],0.0, 0.0, 0.0);
+			}
+		}
+	}
+	if(ServerCar[idx][v_valid]==0 && ServerCar[idx][v_3dtextlabel]!=Text3D:INVALID_3DTEXT_ID)
+	{
+	    Delete3DTextLabel(ServerCar[idx][v_3dtextlabel]);
+	}
+}
+getFreeVID()
+{
+	for(new i=0; i<sizeof(ServerCar); i++)
+	{
+	   if(ServerCar[i][v_dbid]==-1) return i;
+	}
+	print("Error: Maximale Anzahl an Server Autos erreicht.");
+
+	return -1;
+}
+
+
+ocmd:createcar(playerid,params[]) // beim erstellen eines Taxis wird das textlabel erst nach serverneustart sichtbar
+{
+	new model,function,color1,color2;
+    if(sscanf(params, "dddd", model, function,color1,color2)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /createcar <ModelID> <Function> <Color1> <Color2>");
+    
+    if(function <=0 || function > 1)
+    {
+        SendClientMessage(playerid, COLOR_RED, "Wrong Function ID!");
+        SCM(playerid,-1,"1 = Taxi Cab");
+        return 1;
+	}
+	
+	new idx = getFreeVID();
+	if(idx == -1) return SCM(playerid,COLOR_RED,"The maximum Number of Vehicles has been reached.");
+	if(GetPlayerInterior(playerid) || GetPlayerVirtualWorld(playerid) !=0) return SCM(playerid,COLOR_RED,"Please leave your Interior / virtual World first.");
+	if(model < 400 || model > 611) return SCM(playerid,COLOR_RED,"Model-ID only from 400 - 611.");
+	if(color1 < 0 || color1 > 255) return SCM(playerid,COLOR_RED,"Wrong Color(1)!");
+	if(color2 < 0 || color2 > 255) return SCM(playerid,COLOR_RED,"Wrong Color(2)!");
+	
+	new Float:fX,Float:fY,Float:fZ,Float:fA;
+	GetPlayerPos(playerid,fX,fY,fZ),GetPlayerFacingAngle(playerid,fA);
+	
+	ServerCar[idx][v_cartype] = model;
+    ServerCar[idx][v_PosX] = fX;
+	ServerCar[idx][v_PosY] = fY;
+	ServerCar[idx][v_PosZ] = fZ;
+	ServerCar[idx][v_PosR] = fA;
+	ServerCar[idx][v_color1] = color1;
+	ServerCar[idx][v_color2] = color2;
+	ServerCar[idx][v_function] = function;
+	ServerCar[idx][v_valid] = 1;
+	ServerCar[idx][v_dbid] = idx;
+	ServerCar[idx][v_3dtextlabel]=Text3D:INVALID_3DTEXT_ID;
+	ServerCar[idx][v_cabPrice]=0;
+	ServerCar[idx][v_localid] = CreateVehicle(ServerCar[idx][v_cartype],ServerCar[idx][v_PosX],ServerCar[idx][v_PosY],ServerCar[idx][v_PosZ],ServerCar[idx][v_PosR],ServerCar[idx][v_color1],ServerCar[idx][v_color2],-1,0);
+	if(SavcCarToDataBase(idx))return SCM(playerid,COLOR_LIGHTBLUE,"You successfully created a new Vehicle!");
+	
+	SetCarAttachments(idx);
+    //SendClientMessage(playerid, COLOR_RED, "Login unsuccessful, password is wrong!");
+    return 1;
+}
+ocmd:deletecar(playerid,params[])
+{
+	new vehicleid,count,idx;
+    if(sscanf(params, "d", vehicleid)) return SendClientMessage(playerid, COLOR_GREY, "Usage: /deletecar <vehicleID> ");
+
+	for(idx=0; idx<sizeof(ServerCar); idx++)
+	{
+ 		if(ServerCar[idx][v_valid]==1)
+   		{
+   		    if(ServerCar[idx][v_localid]==vehicleid)
+   		    {
+   		        ServerCar[idx][v_cartype] = 0;
+			    ServerCar[idx][v_PosX] = 0;
+				ServerCar[idx][v_PosY] = 0;
+				ServerCar[idx][v_PosZ] = 0;
+				ServerCar[idx][v_PosR] = 0;
+				ServerCar[idx][v_color1] = 0;
+				ServerCar[idx][v_color2] = 0;
+				ServerCar[idx][v_function] = 0;
+				ServerCar[idx][v_valid] = 0;
+				DestroyVehicle(ServerCar[idx][v_localid]);
+				SetCarAttachments(idx);
+				count++;
+		   	}
+   		}
+   	}//SendFormMessage
+	if(count>0)return SendFormMessage(playerid, COLOR_RED, "You successfully deleted Vehicle ID %d!", ServerCar[idx][v_localid]);
+	else return SCM(playerid,COLOR_RED,"Specified Vehicle could not be deleted!");
+}
+stock SavcCarToDataBase(idx)
+{
+	new query[128];
+    mysql_format(handler, query, sizeof(query), "INSERT INTO `ServerCars` (`v_dbid`, `v_valid`) VALUES ('%d', '%d')",idx,1);
+	mysql_query(handler, query);
+	SaveVehicle(idx);
+	return 1;
+}
+
+forward SaveVehicle(idx);
+public SaveVehicle(idx)
+{
+	new query[512];
+	if(ServerCar[idx][v_valid]==1)
+	{
+    format(query,sizeof(query),"UPDATE ServerCars SET v_cartype='%d',v_PosX='%f',v_PosY='%f',v_PosZ='%f',v_PosR='%f',v_color1='%d',v_color1='%d',v_function='%d',v_valid='%d' WHERE v_dbid ='%d'",
+	ServerCar[idx][v_cartype],ServerCar[idx][v_PosX],ServerCar[idx][v_PosY],ServerCar[idx][v_PosZ],ServerCar[idx][v_PosR],ServerCar[idx][v_color1],ServerCar[idx][v_color2],ServerCar[idx][v_function],ServerCar[idx][v_valid],ServerCar[idx][v_dbid]);
+	mysql_pquery(handler, query);
+	}
+}
+
+stock IsVehicleOccupied(vehicleid)
+{
+    for(new i = 0; i < MAX_PLAYERS; i++)
+    {
+        if(IsPlayerConnected(i))
+        {
+            if(IsPlayerInVehicle(i, vehicleid)) return 1;
+        }
+    }
+    return 0;
+}
+
+stock ResetVars(playerid)
+{
+    pInfo[playerid][CurrentVeh]=INVALID_VEHICLE_ID;
+    pInfo[playerid][cabFee]=0;
+    pInfo[playerid][TaxiSeconds]=0;
+    pInfo[playerid][pJob]=0;
+}
+
+
+stock GetVehicleFunction(vehicleid)// für allgemeine Fahrzeuge
+{
+    for(new idx=0; idx<sizeof(ServerCar); idx++)
+	{
+ 		if(ServerCar[idx][v_valid]==1)
+   		{
+   		    if(ServerCar[idx][v_localid]==vehicleid)
+   		    {
+   		        return ServerCar[idx][v_function];
+		   	}
+   		}
+   	}
+   	return 0;
+}
+
+
+
+stock GetVehicleDriverID(vehicleid)
+{
+    for(new i,l=GetPlayerPoolSize()+1; i<l; i++) if(GetPlayerState(i) == PLAYER_STATE_DRIVER && IsPlayerInVehicle(i,vehicleid)) return i;
+    return -1;
+}
+stock GetLoopIDByVehicleID(vehicleid)//AFS
+{
+    for(new idx=0; idx<sizeof(ServerCar); idx++)
+	{
+ 		if(ServerCar[idx][v_valid]==1)
+   		{
+   		    if(ServerCar[idx][v_localid]==vehicleid)
+   		    {
+   		        return idx;
+		   	}
+   		}
+   	}
+   	return -1;
+}
+stock GetPlayerJob(playerid)
+{
+	return pInfo[playerid][pJob];
+}
+stock GetName(playerid)
+{
+    new name[MAX_PLAYER_NAME];
+    GetPlayerName(playerid,name,sizeof(name));
+    return name;
+}
+
+forward OneSecondTimerPublic();
+public OneSecondTimerPublic()
+{
+    for(new i = GetPlayerPoolSize(); i!=-1; i--)
+    {
+        if(IsPlayerConnected(i) && pInfo[i][LoggedIn]==1)//hakcerS?
+        {
+            if(IsPlayerInAnyVehicle(i)) // Fahrzeuge
+            {
+				new vehicleid = GetPlayerVehicleID(i);
+				if(GetPlayerState(i) == PLAYER_STATE_PASSENGER)
+				{
+				    if(GetVehicleFunction(vehicleid)!=0) //if IsplayerinvehiclewheredriverhasXXXjob lolll
+				    {
+				        switch(GetVehicleFunction(vehicleid))
+				        {
+				            case 1:
+				            {
+								new taxidriver = GetVehicleDriverID(vehicleid);
+				                if(taxidriver !=-1)
+				                {
+				                    if(GetPlayerJob(taxidriver) == 1) 
+				                    {
+										pInfo[i][TaxiSeconds]++;
+									}
+								}
+								
+							}
+						}
+					}
+				}
+			}
+		}
+        
+	}
+}
+
+
+
+
+
